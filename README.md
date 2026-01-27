@@ -1,4 +1,4 @@
-# project_mali_matrimony
+# Project Mali Matrimony
 
 A new Flutter project.
 
