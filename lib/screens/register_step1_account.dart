@@ -13,6 +13,8 @@ class RegisterStep1Account extends StatefulWidget {
 class _RegisterStep1AccountState extends State<RegisterStep1Account> {
   final RegistrationData data = RegistrationData();
 
+  final _formKey = GlobalKey<FormState>();
+
   bool obscurePassword = true;
   bool obscureConfirmPassword = true;
 
@@ -44,107 +46,149 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        "· Step 1 of 5 ·",
-                        style: TextStyle(
-                          color: Color(0xFF820815),
-                          fontWeight: FontWeight.w600,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "· Step 1 of 5 ·",
+                          style: TextStyle(
+                            color: Color(0xFF820815),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 12),
 
-                      LinearProgressIndicator(
-                        value: 1 / 5, // Step 1
-                        minHeight: 6,
-                        backgroundColor: Color(0xFFFFB8AB),
-                        color: Color(0xFF820815),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      const Text(
-                        "Create Account",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
+                        LinearProgressIndicator(
+                          value: 1 / 5, // Step 1
+                          minHeight: 6,
+                          backgroundColor: Color(0xFFFFB8AB),
                           color: Color(0xFF820815),
+                          borderRadius: BorderRadius.circular(100),
                         ),
-                      ),
-                      const SizedBox(height: 32),
 
-                      _textField("Full Name", _fullName),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 32),
 
-                      _textField(
-                        "Phone Number",
-                        _phone,
-                        keyboard: TextInputType.phone,
-                      ),
-                      const SizedBox(height: 16),
+                        const Text(
+                          "Create Account",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF820815),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
 
-                      _textField(
-                        "Email (optional)",
-                        _email,
-                        keyboard: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 16),
+                        _textField(
+                          "Full Name",
+                          _fullName,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter your full name";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
 
-                      _passwordField(
-                        "Password",
-                        _password,
-                        obscurePassword,
-                        () => setState(() {
-                          obscurePassword = !obscurePassword;
-                        }),
-                      ),
-                      const SizedBox(height: 16),
+                        _textField(
+                          "Phone Number",
+                          _phone,
+                          keyboard: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter your phone number";
+                            }
+                            if (value.length < 10) {
+                              return "Enter a valid 10-digit phone number";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
 
-                      _passwordField(
-                        "Confirm Password",
-                        _confirmPassword,
-                        obscureConfirmPassword,
-                        () => setState(() {
-                          obscureConfirmPassword = !obscureConfirmPassword;
-                        }),
-                      ),
-                      const SizedBox(height: 24),
+                        _textField(
+                          "Email (optional)",
+                          _email,
+                          keyboard: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value != null && value.isNotEmpty) {
+                              if (!RegExp(
+                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                              ).hasMatch(value)) {
+                                return "Enter a valid email address";
+                              }
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
 
-                      ElevatedButton(
-                        style: _buttonStyle(),
-                        onPressed: () async {
-                          if (_password.text != _confirmPassword.text) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Passwords do not match"),
-                              ),
-                            );
-                            return;
-                          }
+                        _passwordField(
+                          "Password",
+                          _password,
+                          obscurePassword,
+                          () => setState(() {
+                            obscurePassword = !obscurePassword;
+                          }),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter a password";
+                            }
+                            if (value.length < 6) {
+                              return "Password must be at least 6 characters";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
 
-                          data.fullName = _fullName.text;
-                          data.phone = _phone.text;
-                          data.email = _email.text;
-                          data.password = _password.text;
+                        _passwordField(
+                          "Confirm Password",
+                          _confirmPassword,
+                          obscureConfirmPassword,
+                          () => setState(() {
+                            obscureConfirmPassword = !obscureConfirmPassword;
+                          }),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please confirm your password";
+                            }
+                            if (value != _password.text) {
+                              return "Passwords do not match";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
 
-                          await autoSaveStep(data, 1);
+                        ElevatedButton(
+                          style: _buttonStyle(),
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              data.fullName = _fullName.text;
+                              data.phone = _phone.text;
+                              data.email = _email.text;
+                              data.password = _password.text;
 
-                          if (!context.mounted) return;
+                              await autoSaveStep(data, 1);
 
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => RegisterStep2Personal(data: data),
-                            ),
-                          );
-                        },
+                              if (!context.mounted) return;
 
-                        child: const Text("Next"),
-                      ),
-                    ],
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      RegisterStep2Personal(data: data),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text("Next"),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -159,11 +203,13 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
     String label,
     TextEditingController controller, {
     TextInputType keyboard = TextInputType.text,
+    String? Function(String?)? validator,
   }) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       keyboardType: keyboard,
       decoration: _decoration(label),
+      validator: validator,
     );
   }
 
@@ -171,11 +217,13 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
     String label,
     TextEditingController controller,
     bool obscure,
-    VoidCallback toggle,
-  ) {
-    return TextField(
+    VoidCallback toggle, {
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
       controller: controller,
       obscureText: obscure,
+      validator: validator,
       decoration: _decoration(label).copyWith(
         suffixIcon: IconButton(
           icon: Icon(

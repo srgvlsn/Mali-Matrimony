@@ -12,6 +12,7 @@ class RegisterStep3Community extends StatefulWidget {
 }
 
 class _RegisterStep3CommunityState extends State<RegisterStep3Community> {
+  final _formKey = GlobalKey<FormState>();
   final fatherController = TextEditingController();
   final motherController = TextEditingController();
   final guardianNameController = TextEditingController();
@@ -43,114 +44,190 @@ class _RegisterStep3CommunityState extends State<RegisterStep3Community> {
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        "· Step 3 of 5 ·",
-                        style: TextStyle(
-                          color: Color(0xFF820815),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      LinearProgressIndicator(
-                        value: 3 / 5,
-                        minHeight: 6,
-                        backgroundColor: Color(0xFFFFB8AB),
-                        color: Color(0xFF820815),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      const SizedBox(height: 32),
-
-                      const Text(
-                        "Family & Community Details",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF820815),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      _textField("Father’s Name", fatherController),
-                      const SizedBox(height: 16),
-
-                      _textField("Mother’s Name", motherController),
-                      const SizedBox(height: 16),
-
-                      // Legal Guardian Selector
-                      DropdownButtonFormField<String>(
-                        decoration: _decoration("Legal Guardian"),
-                        initialValue: guardianType,
-                        items: const [
-                          DropdownMenuItem(
-                            value: "Father",
-                            child: Text("Father"),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "· Step 3 of 5 ·",
+                          style: TextStyle(
+                            color: Color(0xFF820815),
+                            fontWeight: FontWeight.w600,
                           ),
-                          DropdownMenuItem(
-                            value: "Mother",
-                            child: Text("Mother"),
+                        ),
+                        const SizedBox(height: 12),
+
+                        LinearProgressIndicator(
+                          value: 3 / 5,
+                          minHeight: 6,
+                          backgroundColor: Color(0xFFFFB8AB),
+                          color: Color(0xFF820815),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        const SizedBox(height: 32),
+
+                        const Text(
+                          "Family & Community Details",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF820815),
                           ),
-                          DropdownMenuItem(
-                            value: "Other",
-                            child: Text("Other"),
+                        ),
+                        const SizedBox(height: 32),
+
+                        _textField(
+                          "Father’s Name",
+                          fatherController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter father's name";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        _textField(
+                          "Mother’s Name",
+                          motherController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter mother's name";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Legal Guardian Selector
+                        DropdownButtonFormField<String>(
+                          decoration: _decoration("Legal Guardian"),
+                          value: guardianType,
+                          items: const [
+                            DropdownMenuItem(
+                              value: "Father",
+                              child: Text("Father"),
+                            ),
+                            DropdownMenuItem(
+                              value: "Mother",
+                              child: Text("Mother"),
+                            ),
+                            DropdownMenuItem(
+                              value: "Other",
+                              child: Text("Other"),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            setState(() {
+                              guardianType = value!;
+                            });
+                          },
+                        ),
+
+                        if (guardianType == "Other") ...[
+                          const SizedBox(height: 16),
+                          _textField(
+                            "Guardian Name",
+                            guardianNameController,
+                            validator: (value) {
+                              if (guardianType == "Other" &&
+                                  (value == null || value.isEmpty)) {
+                                return "Please enter guardian name";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _textField(
+                            "Relationship",
+                            guardianRelationController,
+                            validator: (value) {
+                              if (guardianType == "Other" &&
+                                  (value == null || value.isEmpty)) {
+                                return "Please enter relationship";
+                              }
+                              return null;
+                            },
                           ),
                         ],
-                        onChanged: (value) {
-                          setState(() {
-                            guardianType = value!;
-                          });
-                        },
-                      ),
 
-                      if (guardianType == "Other") ...[
                         const SizedBox(height: 16),
-                        _textField("Guardian Name", guardianNameController),
+
+                        _textField(
+                          "Caste",
+                          casteController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter caste";
+                            }
+                            return null;
+                          },
+                        ),
                         const SizedBox(height: 16),
-                        _textField("Relationship", guardianRelationController),
+
+                        _textField(
+                          "Sub‑caste",
+                          subCasteController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter sub-caste";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        _textField(
+                          "Mother Tongue",
+                          motherTongueController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter mother tongue";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        _textField(
+                          "Languages (comma separated)",
+                          languagesController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter languages known";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 32),
+
+                        ElevatedButton(
+                          style: _buttonStyle(),
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              widget.data.caste = casteController.text;
+                              widget.data.subCaste = subCasteController.text;
+                              widget.data.motherTongue =
+                                  motherTongueController.text;
+
+                              // Family details can be extended in model later
+                              // widget.data.guardianType = guardianType;
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      RegisterStep4Career(data: widget.data),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text("Next"),
+                        ),
                       ],
-
-                      const SizedBox(height: 16),
-
-                      _textField("Caste", casteController),
-                      const SizedBox(height: 16),
-
-                      _textField("Sub‑caste", subCasteController),
-                      const SizedBox(height: 16),
-
-                      _textField("Mother Tongue", motherTongueController),
-                      const SizedBox(height: 16),
-
-                      _textField(
-                        "Languages (comma separated)",
-                        languagesController,
-                      ),
-                      const SizedBox(height: 32),
-
-                      ElevatedButton(
-                        style: _buttonStyle(),
-                        onPressed: () {
-                          widget.data.caste = casteController.text;
-                          widget.data.subCaste = subCasteController.text;
-                          widget.data.motherTongue =
-                              motherTongueController.text;
-
-                          // Family details can be extended in model later
-                          // widget.data.guardianType = guardianType;
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  RegisterStep4Career(data: widget.data),
-                            ),
-                          );
-                        },
-                        child: const Text("Next"),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -161,8 +238,16 @@ class _RegisterStep3CommunityState extends State<RegisterStep3Community> {
     );
   }
 
-  Widget _textField(String label, TextEditingController controller) {
-    return TextField(controller: controller, decoration: _decoration(label));
+  Widget _textField(
+    String label,
+    TextEditingController controller, {
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: _decoration(label),
+      validator: validator,
+    );
   }
 
   InputDecoration _decoration(String label) {

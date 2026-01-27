@@ -14,6 +14,7 @@ class RegisterStep4Career extends StatefulWidget {
 }
 
 class _RegisterStep4CareerState extends State<RegisterStep4Career> {
+  final _formKey = GlobalKey<FormState>();
   final educationController = TextEditingController();
   final professionController = TextEditingController();
   final incomeController = TextEditingController();
@@ -41,140 +42,190 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Step label
-                      const Text(
-                        "· Step 4 of 5 ·",
-                        style: TextStyle(
-                          color: Color(0xFF820815),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Progress bar
-                      LinearProgressIndicator(
-                        value: 4 / 5,
-                        minHeight: 6,
-                        backgroundColor: Color(0xFFFFB8AB),
-                        color: Color(0xFF820815),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      const SizedBox(height: 32),
-
-                      const Text(
-                        "Career & Work Details",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF820815),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      _textField("Education", educationController),
-                      const SizedBox(height: 16),
-
-                      _textField("Profession", professionController),
-                      const SizedBox(height: 16),
-
-                      _textField(
-                        "Annual Income",
-                        incomeController,
-                        keyboard: TextInputType.number,
-                      ),
-                      const SizedBox(height: 16),
-
-                      _textField("Working City", cityController),
-                      const SizedBox(height: 16),
-
-                      // Work Mode
-                      DropdownButtonFormField<String>(
-                        decoration: _decoration("Work Mode"),
-                        initialValue: workMode,
-                        items: const [
-                          DropdownMenuItem(
-                            value: "Office",
-                            child: Text("Office"),
-                          ),
-                          DropdownMenuItem(
-                            value: "Work From Home",
-                            child: Text("Work From Home"),
-                          ),
-                          DropdownMenuItem(
-                            value: "Hybrid",
-                            child: Text("Hybrid"),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            workMode = value!;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      ElevatedButton(
-                        style: _buttonStyle(),
-                        onPressed: () async {
-                          widget.data.education = educationController.text;
-                          widget.data.profession = professionController.text;
-                          widget.data.annualIncome = incomeController.text;
-                          widget.data.workingCity = cityController.text;
-                          widget.data.workMode = workMode;
-
-                          await autoSaveStep(widget.data, 4);
-
-                          if (!context.mounted) return;
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  RegisterStep5Profile(data: widget.data),
-                            ),
-                          );
-                        },
-
-                        child: const Text("Next"),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () async {
-                          // Save current state
-                          widget.data.education = educationController.text;
-                          widget.data.profession = professionController.text;
-                          widget.data.annualIncome = incomeController.text;
-                          widget.data.workingCity = cityController.text;
-                          widget.data.workMode = workMode;
-
-                          widget.data.lastCompletedStep = 3;
-                          await RegistrationDraft.save(widget.data);
-
-                          if (!context.mounted) return;
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                "Progress saved. You can resume later.",
-                              ),
-                            ),
-                          );
-
-                          Navigator.popUntil(context, (route) => route.isFirst);
-                        },
-                        child: const Text(
-                          "Save & Resume Later",
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Step label
+                        const Text(
+                          "· Step 4 of 5 ·",
                           style: TextStyle(
-                            color: Color(0xFF6E040F),
-                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF820815),
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+
+                        // Progress bar
+                        LinearProgressIndicator(
+                          value: 4 / 5,
+                          minHeight: 6,
+                          backgroundColor: Color(0xFFFFB8AB),
+                          color: Color(0xFF820815),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        const SizedBox(height: 32),
+
+                        const Text(
+                          "Career & Work Details",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF820815),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        _textField(
+                          "Education",
+                          educationController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter your education";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        _textField(
+                          "Profession",
+                          professionController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter your profession";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        _textField(
+                          "Annual Income",
+                          incomeController,
+                          keyboard: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter annual income";
+                            }
+                            if (double.tryParse(value) == null) {
+                              return "Enter a valid amount";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        _textField(
+                          "Working City",
+                          cityController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter working city";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Work Mode
+                        DropdownButtonFormField<String>(
+                          decoration: _decoration("Work Mode"),
+                          value: workMode,
+                          items: const [
+                            DropdownMenuItem(
+                              value: "Office",
+                              child: Text("Office"),
+                            ),
+                            DropdownMenuItem(
+                              value: "Work From Home",
+                              child: Text("Work From Home"),
+                            ),
+                            DropdownMenuItem(
+                              value: "Hybrid",
+                              child: Text("Hybrid"),
+                            ),
+                          ],
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please select work mode";
+                            }
+                            return null;
+                          },
+                          onChanged: (value) {
+                            setState(() {
+                              workMode = value!;
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        ElevatedButton(
+                          style: _buttonStyle(),
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              widget.data.education = educationController.text;
+                              widget.data.profession =
+                                  professionController.text;
+                              widget.data.annualIncome = incomeController.text;
+                              widget.data.workingCity = cityController.text;
+                              widget.data.workMode = workMode;
+
+                              await autoSaveStep(widget.data, 4);
+
+                              if (!context.mounted) return;
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      RegisterStep5Profile(data: widget.data),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text("Next"),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () async {
+                            // Save current state regardless of validation for drafts
+                            widget.data.education = educationController.text;
+                            widget.data.profession = professionController.text;
+                            widget.data.annualIncome = incomeController.text;
+                            widget.data.workingCity = cityController.text;
+                            widget.data.workMode = workMode;
+
+                            widget.data.lastCompletedStep = 3;
+                            await RegistrationDraft.save(widget.data);
+
+                            if (!context.mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Progress saved. You can resume later.",
+                                ),
+                              ),
+                            );
+
+                            Navigator.popUntil(
+                              context,
+                              (route) => route.isFirst,
+                            );
+                          },
+                          child: const Text(
+                            "Save & Resume Later",
+                            style: TextStyle(
+                              color: Color(0xFF6E040F),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -189,11 +240,13 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
     String label,
     TextEditingController controller, {
     TextInputType keyboard = TextInputType.text,
+    String? Function(String?)? validator,
   }) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       keyboardType: keyboard,
       decoration: _decoration(label),
+      validator: validator,
     );
   }
 

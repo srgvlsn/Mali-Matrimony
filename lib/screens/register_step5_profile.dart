@@ -24,6 +24,8 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
   List<File> _additionalImages = [];
   final ImagePicker _picker = ImagePicker();
 
+  final _formKey = GlobalKey<FormState>();
+
   @override
   void initState() {
     super.initState();
@@ -77,178 +79,219 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
               child: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        "· Step 5 of 5 ·",
-                        style: TextStyle(
-                          color: Color(0xFF820815),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      LinearProgressIndicator(
-                        value: 5 / 5,
-                        minHeight: 6,
-                        backgroundColor: Color(0xFFFFB8AB),
-                        color: Color(0xFF820815),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      const SizedBox(height: 32),
-
-                      const Text(
-                        "Profile Details",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF820815),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-
-                      // Profile Photo Placeholder
-                      GestureDetector(
-                        onTap: _pickProfileImage,
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor: const Color(0xFFFFB8AB),
-                          backgroundImage: _profileImage != null
-                              ? FileImage(_profileImage!)
-                              : null,
-                          child: _profileImage == null
-                              ? const Icon(
-                                  Icons.camera_alt,
-                                  size: 32,
-                                  color: Color(0xFF820815),
-                                )
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "Add Profile Photo",
-                        style: TextStyle(color: Color(0xFF820815)),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // About Me
-                      TextField(
-                        controller: aboutMeController,
-                        maxLines: 4,
-                        decoration: _decoration("About Me"),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Additional Photos (optional placeholder)
-                      OutlinedButton.icon(
-                        onPressed: _pickAdditionalImages,
-                        icon: const Icon(
-                          Icons.photo_library,
-                          color: Color(0xFF820815),
-                        ),
-                        label: const Text(
-                          "Add Additional Photos (Optional)",
-                          style: TextStyle(color: Color(0xFF820815)),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF820815)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "· Step 5 of 5 ·",
+                          style: TextStyle(
+                            color: Color(0xFF820815),
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                      if (_additionalImages.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+
+                        LinearProgressIndicator(
+                          value: 5 / 5,
+                          minHeight: 6,
+                          backgroundColor: Color(0xFFFFB8AB),
+                          color: Color(0xFF820815),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        const SizedBox(height: 32),
+
+                        const Text(
+                          "Profile Details",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF820815),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Profile Photo Placeholder
+                        GestureDetector(
+                          onTap: _pickProfileImage,
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundColor: const Color(0xFFFFB8AB),
+                            backgroundImage: _profileImage != null
+                                ? FileImage(_profileImage!)
+                                : null,
+                            child: _profileImage == null
+                                ? const Icon(
+                                    Icons.camera_alt,
+                                    size: 32,
+                                    color: Color(0xFF820815),
+                                  )
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          "Add Profile Photo (Required)",
+                          style: TextStyle(color: Color(0xFF820815)),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // About Me
+                        TextFormField(
+                          controller: aboutMeController,
+                          maxLines: 4,
+                          decoration: _decoration("About Me"),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please tell us about yourself";
+                            }
+                            if (value.length < 20) {
+                              return "Please enter at least 20 characters";
+                            }
+                            return null;
+                          },
+                        ),
                         const SizedBox(height: 16),
-                        SizedBox(
-                          height: 100,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _additionalImages.length,
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.file(
-                                        _additionalImages[index],
-                                        height: 100,
-                                        width: 100,
-                                        fit: BoxFit.cover,
+
+                        // Additional Photos (optional placeholder)
+                        OutlinedButton.icon(
+                          onPressed: _pickAdditionalImages,
+                          icon: const Icon(
+                            Icons.photo_library,
+                            color: Color(0xFF820815),
+                          ),
+                          label: const Text(
+                            "Add Additional Photos (Optional)",
+                            style: TextStyle(color: Color(0xFF820815)),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF820815)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                          ),
+                        ),
+                        if (_additionalImages.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 100,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _additionalImages.length,
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: Stack(
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.file(
+                                          _additionalImages[index],
+                                          height: 100,
+                                          width: 100,
+                                          fit: BoxFit.cover,
+                                        ),
                                       ),
-                                    ),
-                                    Positioned(
-                                      right: 0,
-                                      top: 0,
-                                      child: GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            _additionalImages.removeAt(index);
-                                          });
-                                        },
-                                        child: Container(
-                                          color: const Color(
-                                            0xFF820815,
-                                          ).withValues(alpha: 0.7),
-                                          child: const Icon(
-                                            Icons.close,
-                                            size: 20,
-                                            color: Colors.white,
+                                      Positioned(
+                                        right: 0,
+                                        top: 0,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _additionalImages.removeAt(index);
+                                            });
+                                          },
+                                          child: Container(
+                                            color: const Color(
+                                              0xFF820815,
+                                            ).withValues(alpha: 0.7),
+                                            child: const Icon(
+                                              Icons.close,
+                                              size: 20,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 24),
+
+                        // Partner Preferences
+                        TextFormField(
+                          controller: partnerPreferenceController,
+                          maxLines: 3,
+                          decoration: _decoration("Partner Preferences"),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter partner preferences";
+                            }
+                            if (value.length < 20) {
+                              return "Please enter at least 20 characters";
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        ElevatedButton(
+                          style: _buttonStyle(),
+                          onPressed: () async {
+                            if (_profileImage == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Profile photo is required"),
                                 ),
                               );
-                            },
-                          ),
+                              return;
+                            }
+
+                            if (_formKey.currentState!.validate()) {
+                              // 1️⃣ Save final step data
+                              widget.data.aboutMe = aboutMeController.text;
+                              widget.data.partnerPreferences =
+                                  partnerPreferenceController.text;
+                              widget.data.profileImagePath =
+                                  _profileImage?.path;
+                              widget.data.additionalImagePaths =
+                                  _additionalImages.map((f) => f.path).toList();
+
+                              await autoSaveStep(widget.data, 5);
+
+                              // 2️⃣ Call AuthService register
+                              final success = await AuthService.instance
+                                  .register();
+
+                              if (!mounted) return;
+
+                              // 3️⃣ If registration succeeds
+                              if (success) {
+                                await RegistrationDraft.clear();
+                                if (!mounted) return;
+
+                                Navigator.pushAndRemoveUntil(
+                                  this.context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const DashboardScreen(),
+                                  ),
+                                  (route) => false,
+                                );
+                              }
+                            }
+                          },
+                          child: const Text("Finish Registration"),
                         ),
                       ],
-
-                      const SizedBox(height: 24),
-
-                      // Partner Preferences
-                      TextField(
-                        controller: partnerPreferenceController,
-                        maxLines: 3,
-                        decoration: _decoration("Partner Preferences"),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      ElevatedButton(
-                        style: _buttonStyle(),
-                        onPressed: () async {
-                          // 1️⃣ Save final step data
-                          await autoSaveStep(widget.data, 5);
-
-                          // 2️⃣ Call AuthService register
-                          final success = await AuthService.instance.register();
-
-                          if (!mounted) return;
-
-                          // 3️⃣ If registration succeeds
-                          if (success) {
-                            await RegistrationDraft.clear();
-                            if (!mounted) return;
-
-                            Navigator.pushAndRemoveUntil(
-                              this.context,
-                              MaterialPageRoute(
-                                builder: (_) => const DashboardScreen(),
-                              ),
-                              (route) => false,
-                            );
-                          }
-                        },
-                        child: const Text("Finish Registration"),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
