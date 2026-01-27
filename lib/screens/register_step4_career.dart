@@ -1,0 +1,223 @@
+import 'package:flutter/material.dart';
+import '../models/registration_data.dart';
+import '../utils/auto_save.dart';
+import 'register_step5_profile.dart';
+import '../utils/registration_draft.dart';
+
+class RegisterStep4Career extends StatefulWidget {
+  final RegistrationData data;
+
+  const RegisterStep4Career({super.key, required this.data});
+
+  @override
+  State<RegisterStep4Career> createState() => _RegisterStep4CareerState();
+}
+
+class _RegisterStep4CareerState extends State<RegisterStep4Career> {
+  final educationController = TextEditingController();
+  final professionController = TextEditingController();
+  final incomeController = TextEditingController();
+  final cityController = TextEditingController();
+
+  String workMode = "Office";
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFFD1C8),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFFD1C8),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF820815)),
+          onPressed: () => Navigator.pop(context), // back to Step 3
+        ),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Step label
+                      const Text(
+                        "· Step 4 of 5 ·",
+                        style: TextStyle(
+                          color: Color(0xFF820815),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Progress bar
+                      LinearProgressIndicator(
+                        value: 4 / 5,
+                        minHeight: 6,
+                        backgroundColor: Color(0xFFFFB8AB),
+                        color: Color(0xFF820815),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      const SizedBox(height: 32),
+
+                      const Text(
+                        "Career & Work Details",
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF820815),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      _textField("Education", educationController),
+                      const SizedBox(height: 16),
+
+                      _textField("Profession", professionController),
+                      const SizedBox(height: 16),
+
+                      _textField(
+                        "Annual Income",
+                        incomeController,
+                        keyboard: TextInputType.number,
+                      ),
+                      const SizedBox(height: 16),
+
+                      _textField("Working City", cityController),
+                      const SizedBox(height: 16),
+
+                      // Work Mode
+                      DropdownButtonFormField<String>(
+                        decoration: _decoration("Work Mode"),
+                        initialValue: workMode,
+                        items: const [
+                          DropdownMenuItem(
+                            value: "Office",
+                            child: Text("Office"),
+                          ),
+                          DropdownMenuItem(
+                            value: "Work From Home",
+                            child: Text("Work From Home"),
+                          ),
+                          DropdownMenuItem(
+                            value: "Hybrid",
+                            child: Text("Hybrid"),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            workMode = value!;
+                          });
+                        },
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      ElevatedButton(
+                        style: _buttonStyle(),
+                        onPressed: () async {
+                          widget.data.education = educationController.text;
+                          widget.data.profession = professionController.text;
+                          widget.data.annualIncome = incomeController.text;
+                          widget.data.workingCity = cityController.text;
+                          widget.data.workMode = workMode;
+
+                          await autoSaveStep(widget.data, 4);
+
+                          if (!context.mounted) return;
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  RegisterStep5Profile(data: widget.data),
+                            ),
+                          );
+                        },
+
+                        child: const Text("Next"),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () async {
+                          // Save current state
+                          widget.data.education = educationController.text;
+                          widget.data.profession = professionController.text;
+                          widget.data.annualIncome = incomeController.text;
+                          widget.data.workingCity = cityController.text;
+                          widget.data.workMode = workMode;
+
+                          widget.data.lastCompletedStep = 3;
+                          await RegistrationDraft.save(widget.data);
+
+                          if (!context.mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                "Progress saved. You can resume later.",
+                              ),
+                            ),
+                          );
+
+                          Navigator.popUntil(context, (route) => route.isFirst);
+                        },
+                        child: const Text(
+                          "Save & Resume Later",
+                          style: TextStyle(
+                            color: Color(0xFF6E040F),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _textField(
+    String label,
+    TextEditingController controller, {
+    TextInputType keyboard = TextInputType.text,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboard,
+      decoration: _decoration(label),
+    );
+  }
+
+  InputDecoration _decoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Color(0xFF820815)),
+      enabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Color(0xFF820815)),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Color(0xFF820815), width: 2),
+        borderRadius: BorderRadius.circular(100),
+      ),
+    );
+  }
+
+  ButtonStyle _buttonStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF820815),
+      foregroundColor: const Color(0xFFFFD1C8),
+      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+    );
+  }
+}
