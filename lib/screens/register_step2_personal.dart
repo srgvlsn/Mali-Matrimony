@@ -113,7 +113,7 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
                         // Gender
                         DropdownButtonFormField<String>(
                           decoration: _decoration("Gender"),
-                          value: selectedGender,
+                          initialValue: selectedGender,
                           items: const [
                             DropdownMenuItem(
                               value: "Male",
@@ -158,7 +158,7 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
                         // Marital Status
                         DropdownButtonFormField<String>(
                           decoration: _decoration("Marital Status"),
-                          value: selectedMaritalStatus,
+                          initialValue: selectedMaritalStatus,
                           items: const [
                             DropdownMenuItem(
                               value: "Unmarried",

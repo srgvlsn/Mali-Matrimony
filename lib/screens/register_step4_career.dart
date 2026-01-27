@@ -132,7 +132,7 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
                         // Work Mode
                         DropdownButtonFormField<String>(
                           decoration: _decoration("Work Mode"),
-                          value: workMode,
+                          initialValue: workMode,
                           items: const [
                             DropdownMenuItem(
                               value: "Office",

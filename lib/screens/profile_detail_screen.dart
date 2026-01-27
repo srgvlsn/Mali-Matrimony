@@ -80,7 +80,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       stretch: true,
       backgroundColor: const Color(0xFF820815),
       leading: CircleAvatar(
-        backgroundColor: Colors.black.withOpacity(0.3),
+        backgroundColor: Colors.black.withValues(alpha: 0.3),
         child: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -117,7 +117,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         shape: BoxShape.circle,
                         color: _currentPage == index
                             ? Colors.white
-                            : Colors.white.withOpacity(0.5),
+                            : Colors.white.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -187,7 +187,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF820815).withOpacity(0.1),
+        color: const Color(0xFF820815).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -223,7 +223,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -298,7 +298,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -354,7 +354,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),

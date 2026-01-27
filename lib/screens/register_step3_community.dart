@@ -104,7 +104,7 @@ class _RegisterStep3CommunityState extends State<RegisterStep3Community> {
                         // Legal Guardian Selector
                         DropdownButtonFormField<String>(
                           decoration: _decoration("Legal Guardian"),
-                          value: guardianType,
+                          initialValue: guardianType,
                           items: const [
                             DropdownMenuItem(
                               value: "Father",
