@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 # Mali Matrimony
-=======
-# Project Mali Matrimony
->>>>>>> 88f7873f0e88a381d3c56a1d287624945facfd73
 
 A dedicated and premium matrimonial application designed specifically for the **Mali Community**. Built with Flutter, this app focuses on providing a seamless experience for finding life partners within the community.
 
