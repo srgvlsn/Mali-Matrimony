@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
-import 'notifications_screen.dart';
+import '../models/notification_model.dart';
+import 'profile_detail_screen.dart';
 import 'matches_screen.dart';
 import 'search_screen.dart';
 import 'chat_list_screen.dart';
@@ -50,12 +51,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: Color(0xFF820815),
                     ),
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const NotificationsScreen(),
-                        ),
-                      );
+                      _showNotificationPopup(context);
                     },
                   ),
                   if (unreadCount > 0)
@@ -173,6 +169,211 @@ class _DashboardScreenState extends State<DashboardScreen> {
       default:
         return "Mali Matrimony";
     }
+  }
+
+  void _showNotificationPopup(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Notifications",
+      barrierColor: Colors.black.withValues(alpha: 0.2),
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, anim1, anim2) => Container(),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return Transform.scale(
+          scale: anim1.value,
+          child: Opacity(
+            opacity: anim1.value,
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 80, 20, 100),
+                child: Material(
+                  color: const Color(0xFFFFD1C8),
+                  borderRadius: BorderRadius.circular(32),
+                  elevation: 8,
+                  child: Consumer<NotificationService>(
+                    builder: (context, notificationService, child) {
+                      final notifications = notificationService.notifications;
+                      return Container(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                24,
+                                24,
+                                24,
+                                12,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "Notifications",
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF820815),
+                                    ),
+                                  ),
+                                  if (notificationService.unreadCount > 0)
+                                    TextButton(
+                                      onPressed: () =>
+                                          notificationService.markAllAsRead(),
+                                      child: const Text(
+                                        "Mark all",
+                                        style: TextStyle(
+                                          color: Color(0xFF820815),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Flexible(
+                              child: notifications.isEmpty
+                                  ? Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 32,
+                                      ),
+                                      child: _buildEmptyNotifications(),
+                                    )
+                                  : ListView.builder(
+                                      shrinkWrap: true,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      itemCount: notifications.length,
+                                      itemBuilder: (context, index) {
+                                        final notification =
+                                            notifications[index];
+                                        return _buildNotificationCard(
+                                          context,
+                                          notification,
+                                          notificationService,
+                                        );
+                                      },
+                                    ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyNotifications() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.notifications_none_rounded,
+            size: 64,
+            color: const Color(0xFF820815).withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "No notifications yet",
+            style: TextStyle(
+              fontSize: 16,
+              color: const Color(0xFF820815).withValues(alpha: 0.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationCard(
+    BuildContext context,
+    NotificationModel notification,
+    NotificationService service,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
+      color: notification.isRead
+          ? Colors.white.withValues(alpha: 0.6)
+          : Colors.white,
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF820815).withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            service.getIconForType(notification.type),
+            color: const Color(0xFF820815),
+            size: 20,
+          ),
+        ),
+        title: Text(
+          notification.title,
+          style: TextStyle(
+            fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.bold,
+            color: const Color(0xFF820815),
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              notification.message,
+              style: TextStyle(
+                color: const Color(0xFF820815).withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _getTimeAgo(notification.timestamp),
+              style: TextStyle(
+                fontSize: 12,
+                color: const Color(0xFF820815).withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        ),
+        onTap: () {
+          if (!notification.isRead) {
+            service.markAsRead(notification.id);
+          }
+          if (notification.relatedUserId != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    ProfileDetailScreen(userId: notification.relatedUserId!),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  String _getTimeAgo(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+    if (difference.inDays > 0) return "${difference.inDays}d ago";
+    if (difference.inHours > 0) return "${difference.inHours}h ago";
+    if (difference.inMinutes > 0) return "${difference.inMinutes}m ago";
+    return "Just now";
   }
 
   PopupMenuItem<String> _buildPopupMenuItem(IconData icon, String title) {
