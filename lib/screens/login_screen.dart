@@ -94,6 +94,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your email or phone';
                             }
+                            // Basic validation for email or 10-digit phone
+                            final isEmail = RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            ).hasMatch(value);
+                            final isPhone = RegExp(r'^\d{10}$').hasMatch(value);
+                            if (!isEmail && !isPhone) {
+                              return "Enter a valid email or 10-digit phone number";
+                            }
                             return null;
                           },
                         ),

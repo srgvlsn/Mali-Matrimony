@@ -186,7 +186,7 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                                   child: Stack(
                                     children: [
                                       ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(20),
                                         child: Image.file(
                                           _additionalImages[index],
                                           height: 100,

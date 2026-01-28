@@ -26,21 +26,13 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     // Fade animation
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
     // Scale animation
     _scaleAnimation = Tween<double>(
       begin: 0.85,
       end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutBack,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     // Start animation
     _controller.forward();
@@ -70,10 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
           opacity: _fadeAnimation,
           child: ScaleTransition(
             scale: _scaleAnimation,
-            child: Image.asset(
-              'assets/images/splash_logo.png',
-              width: 280,
-            ),
+            child: Image.asset('assets/images/splash_logo.png', width: 280),
           ),
         ),
       ),

@@ -16,6 +16,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   bool isLoading = true;
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool isShortlisted = false;
 
   @override
   void initState() {
@@ -223,7 +224,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -335,13 +336,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         if (profile.horoscopeImageUrl != null)
           GestureDetector(
             onTap: () {
-              // Future: Implement full screen image viewer
+              _showFullScreenImage(context, profile.horoscopeImageUrl!);
             },
             child: Container(
               width: double.infinity,
               height: 200,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(30),
                 image: DecorationImage(
                   image: NetworkImage(profile.horoscopeImageUrl!),
                   fit: BoxFit.cover,
@@ -395,7 +396,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -447,6 +448,46 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog.fullscreen(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  },
+                ),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: CircleAvatar(
+                backgroundColor: Colors.black54,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomActions() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -464,17 +505,36 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                setState(() {
+                  isShortlisted = !isShortlisted;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isShortlisted
+                          ? 'Added to shortlist'
+                          : 'Removed from shortlist',
+                    ),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              },
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFF820815)),
+                backgroundColor: isShortlisted
+                    ? const Color(0xFF820815)
+                    : Colors.transparent,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              child: const Text(
-                'Shortlist',
-                style: TextStyle(color: Color(0xFF820815)),
+              child: Text(
+                isShortlisted ? 'Shortlisted' : 'Shortlist',
+                style: TextStyle(
+                  color: isShortlisted ? Colors.white : const Color(0xFF820815),
+                ),
               ),
             ),
           ),

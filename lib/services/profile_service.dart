@@ -118,6 +118,27 @@ class ProfileService {
 
   List<UserProfile> get mockProfiles => _mockProfiles;
 
+  List<UserProfile> searchProfiles({
+    int? minAge,
+    int? maxAge,
+    String? location,
+    String? caste,
+  }) {
+    return _mockProfiles.where((p) {
+      if (minAge != null && p.age < minAge) return false;
+      if (maxAge != null && p.age > maxAge) return false;
+      if (location != null &&
+          !p.location.toLowerCase().contains(location.toLowerCase())) {
+        return false;
+      }
+      if (caste != null &&
+          !p.caste.toLowerCase().contains(caste.toLowerCase())) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
   UserProfile? getProfileById(String id) {
     try {
       return _mockProfiles.firstWhere((p) => p.id == id);
