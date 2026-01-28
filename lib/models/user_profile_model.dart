@@ -38,6 +38,13 @@ class UserProfile {
   // Media
   final List<String> photos;
   final String bio;
+  final String? horoscopeImageUrl;
+
+  // Horoscope Detailed (Template)
+  final String? rashi;
+  final String? nakshatra;
+  final String? birthTime;
+  final String? birthPlace;
 
   // Status
   final bool isVerified;
@@ -69,6 +76,11 @@ class UserProfile {
     required this.siblings,
     required this.photos,
     required this.bio,
+    this.horoscopeImageUrl,
+    this.rashi,
+    this.nakshatra,
+    this.birthTime,
+    this.birthPlace,
     this.isVerified = false,
     this.isPremium = false,
   });

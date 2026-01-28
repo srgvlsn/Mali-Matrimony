@@ -32,6 +32,12 @@ class ProfileService {
       ],
       bio:
           'I am a simple, down-to-earth person with a positive outlook towards life. I value family traditions and am looking for someone who is compatible and understanding.',
+      rashi: 'Mesh (Aries)',
+      nakshatra: 'Ashwini',
+      birthTime: '10:30 AM',
+      birthPlace: 'Pune',
+      horoscopeImageUrl:
+          'https://images.unsplash.com/photo-1532968961962-8a0cb3a2d4f5?q=80&w=1000&auto=format&fit=crop',
       isVerified: true,
       isPremium: true,
     ),
@@ -65,6 +71,10 @@ class ProfileService {
       ],
       bio:
           'Passionate about traveling and exploring new cultures. Looking for a partner who can join me in these adventures and share a meaningful life together.',
+      rashi: 'Sinha (Leo)',
+      nakshatra: 'Magha',
+      birthTime: '02:45 PM',
+      birthPlace: 'Mumbai',
       isVerified: true,
     ),
     UserProfile(
@@ -96,6 +106,12 @@ class ProfileService {
       ],
       bio:
           'Medicine is my passion, but I also love painting and music. I believe in mutual respect and equality in a relationship.',
+      rashi: 'Kanya (Virgo)',
+      nakshatra: 'Hasta',
+      birthTime: '07:15 AM',
+      birthPlace: 'Ahmedabad',
+      horoscopeImageUrl:
+          'https://images.unsplash.com/photo-1502134249126-9f3755a50d78?q=80&w=1000&auto=format&fit=crop',
       isVerified: true,
     ),
   ];

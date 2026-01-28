@@ -60,8 +60,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   _buildSectionTitle('Family Details'),
                   _buildFamilySection(),
                   const SizedBox(height: 24),
-                  _buildSectionTitle('Community & Horoscope'),
+                  _buildSectionTitle('Community'),
                   _buildCommunitySection(),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle('Horoscope Details'),
+                  _buildHoroscopeSection(),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -288,6 +291,103 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         'icon': Icons.star_border,
       },
     ]);
+  }
+
+  Widget _buildHoroscopeSection() {
+    bool hasTemplate =
+        profile.rashi != null ||
+        profile.nakshatra != null ||
+        profile.birthTime != null ||
+        profile.birthPlace != null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (hasTemplate)
+          _buildDetailList([
+            if (profile.rashi != null)
+              {
+                'label': 'Rashi',
+                'value': profile.rashi!,
+                'icon': Icons.brightness_high,
+              },
+            if (profile.nakshatra != null)
+              {
+                'label': 'Nakshatra',
+                'value': profile.nakshatra!,
+                'icon': Icons.wb_sunny_outlined,
+              },
+            if (profile.birthTime != null)
+              {
+                'label': 'Time of Birth',
+                'value': profile.birthTime!,
+                'icon': Icons.access_time,
+              },
+            if (profile.birthPlace != null)
+              {
+                'label': 'Place of Birth',
+                'value': profile.birthPlace!,
+                'icon': Icons.location_on_outlined,
+              },
+          ]),
+        if (hasTemplate && profile.horoscopeImageUrl != null)
+          const SizedBox(height: 16),
+        if (profile.horoscopeImageUrl != null)
+          GestureDetector(
+            onTap: () {
+              // Future: Implement full screen image viewer
+            },
+            child: Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                image: DecorationImage(
+                  image: NetworkImage(profile.horoscopeImageUrl!),
+                  fit: BoxFit.cover,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        ),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'View Horoscope Image',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        if (!hasTemplate && profile.horoscopeImageUrl == null)
+          _buildContentCard('Horoscope details not provided.'),
+      ],
+    );
   }
 
   Widget _buildDetailList(List<Map<String, dynamic>> items) {
