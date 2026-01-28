@@ -1,6 +1,13 @@
+import 'package:flutter/foundation.dart';
 import '../models/user_profile_model.dart';
 
-class ProfileService {
+class ProfileService extends ChangeNotifier {
+  static final ProfileService instance = ProfileService._internal();
+  ProfileService._internal();
+  factory ProfileService() => instance;
+
+  final Set<String> _shortlistedIds = {};
+
   final List<UserProfile> _mockProfiles = [
     UserProfile(
       id: 'user_123',
@@ -117,6 +124,22 @@ class ProfileService {
   ];
 
   List<UserProfile> get mockProfiles => _mockProfiles;
+  Set<String> get shortlistedIds => _shortlistedIds;
+
+  bool isShortlisted(String id) => _shortlistedIds.contains(id);
+
+  void toggleShortlist(String id) {
+    if (_shortlistedIds.contains(id)) {
+      _shortlistedIds.remove(id);
+    } else {
+      _shortlistedIds.add(id);
+    }
+    notifyListeners();
+  }
+
+  List<UserProfile> shortlistProfiles() {
+    return _mockProfiles.where((p) => _shortlistedIds.contains(p.id)).toList();
+  }
 
   List<UserProfile> searchProfiles({
     int? minAge,
