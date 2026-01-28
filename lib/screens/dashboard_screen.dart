@@ -38,12 +38,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         backgroundColor: const Color(0xFFFFD1C8),
         elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Color(0xFF820815)),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
         actions: [
           Consumer<NotificationService>(
             builder: (context, notificationService, child) {
@@ -93,9 +87,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             },
           ),
+          if (_selectedIndex == 3) // Only on Profile Tab
+            PopupMenuButton<String>(
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: Color(0xFF820815),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              onSelected: (value) {
+                // Implement functionality
+              },
+              itemBuilder: (context) => [
+                _buildPopupMenuItem(Icons.settings_outlined, "Settings"),
+                _buildPopupMenuItem(Icons.help_outline, "Help & Support"),
+                _buildPopupMenuItem(Icons.policy_outlined, "Privacy Policy"),
+              ],
+            ),
+          const SizedBox(width: 8),
         ],
       ),
-      drawer: _buildDrawer(context),
       body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: Container(
         margin: const EdgeInsets.all(16),
@@ -163,61 +175,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      backgroundColor: const Color(0xFFFFD1C8),
-      child: Column(
+  PopupMenuItem<String> _buildPopupMenuItem(IconData icon, String title) {
+    return PopupMenuItem<String>(
+      value: title,
+      child: Row(
         children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(color: Color(0xFF820815)),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.favorite, color: Colors.white, size: 48),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "Mali Matrimony",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          _drawerItem(Icons.settings_outlined, "Settings"),
-          _drawerItem(Icons.help_outline, "Help & Support"),
-          _drawerItem(Icons.policy_outlined, "Privacy Policy"),
-          const Spacer(),
-          const Divider(),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              "v1.0.0",
-              style: TextStyle(color: Color(0xFF820815), fontSize: 12),
+          Icon(icon, color: const Color(0xFF820815), size: 20),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFF820815),
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _drawerItem(IconData icon, String title) {
-    return ListTile(
-      leading: Icon(icon, color: const Color(0xFF820815)),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: Color(0xFF820815),
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      onTap: () {
-        // Implement navigation or functionality
-      },
     );
   }
 }
