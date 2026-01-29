@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
 import '../models/notification_model.dart';
@@ -7,6 +8,8 @@ import 'matches_screen.dart';
 import 'search_screen.dart';
 import 'chat_list_screen.dart';
 import 'user_profile_screen.dart';
+import '../services/profile_service.dart';
+import '../models/user_profile_model.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -38,7 +41,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         backgroundColor: const Color(0xFFFFD1C8),
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+        ),
         actions: [
           Consumer<NotificationService>(
             builder: (context, notificationService, child) {
@@ -187,7 +196,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 80, 20, 100),
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  MediaQuery.of(context).padding.top + kToolbarHeight + 2,
+                  20,
+                  100,
+                ),
                 child: Material(
                   color: const Color(0xFFFFD1C8),
                   borderRadius: BorderRadius.circular(32),
@@ -224,7 +238,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       onPressed: () =>
                                           notificationService.markAllAsRead(),
                                       child: const Text(
-                                        "Mark all",
+                                        "Mark all as read",
                                         style: TextStyle(
                                           color: Color(0xFF820815),
                                           fontWeight: FontWeight.w600,
@@ -401,37 +415,228 @@ class _HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Consumer<ProfileService>(
+      builder: (context, profileService, child) {
+        final profiles = profileService.mockProfiles;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: _buildSearchBar(context),
+              ),
+              const SizedBox(height: 32),
+
+              // Featured Matches Section
+              _buildSectionHeader("Featured Matches", () {
+                // Navigate to matches or search
+              }),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 280,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: profiles.length,
+                  itemBuilder: (context, index) {
+                    return _buildFeaturedCard(context, profiles[index]);
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Recent Members Section
+              _buildSectionHeader("Recent Members", () {
+                // Navigate to search
+              }),
+              const SizedBox(height: 16),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: profiles.length > 3 ? 3 : profiles.length,
+                itemBuilder: (context, index) {
+                  return _buildRecentMemberCard(context, profiles[index]);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSectionHeader(String title, VoidCallback onSeeAll) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const SizedBox(height: 16),
-          _buildSearchBar(context),
-          const SizedBox(height: 48),
-          const Center(
-            child: Column(
-              children: [
-                Icon(Icons.favorite, size: 80, color: Color(0xFF820815)),
-                SizedBox(height: 24),
-                Text(
-                  "Welcome to\nMali Matrimony",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF820815),
-                  ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  "Discover matches near you.",
-                  style: TextStyle(fontSize: 16, color: Color(0xFF820815)),
-                ),
-              ],
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF820815),
+            ),
+          ),
+          TextButton(
+            onPressed: onSeeAll,
+            child: Text(
+              "See All",
+              style: TextStyle(
+                color: const Color(0xFF820815).withValues(alpha: 0.6),
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFeaturedCard(BuildContext context, UserProfile profile) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProfileDetailScreen(userId: profile.id),
+          ),
+        );
+      },
+      child: Container(
+        width: 200,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF820815).withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+                child: Image.network(
+                  profile.photos.isNotEmpty
+                      ? profile.photos[0]
+                      : 'https://via.placeholder.com/200x200',
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${profile.name}, ${profile.age}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF820815),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    profile.occupation,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: const Color(0xFF820815).withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        size: 14,
+                        color: Color(0xFF820815),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          profile.location.split(',')[0],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: const Color(
+                              0xFF820815,
+                            ).withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentMemberCard(BuildContext context, UserProfile profile) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: Colors.white,
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        leading: CircleAvatar(
+          radius: 30,
+          backgroundImage: NetworkImage(
+            profile.photos.isNotEmpty
+                ? profile.photos[0]
+                : 'https://via.placeholder.com/60x60',
+          ),
+        ),
+        title: Text(
+          profile.name,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF820815),
+          ),
+        ),
+        subtitle: Text(
+          "${profile.age} yrs • ${profile.location.split(',')[0]}",
+          style: TextStyle(
+            color: const Color(0xFF820815).withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: Color(0xFF820815),
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProfileDetailScreen(userId: profile.id),
+            ),
+          );
+        },
       ),
     );
   }

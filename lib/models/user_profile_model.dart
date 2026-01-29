@@ -84,4 +84,38 @@ class UserProfile {
     this.isVerified = false,
     this.isPremium = false,
   });
+
+  double get completionPercentage {
+    final fields = [
+      name,
+      education,
+      occupation,
+      company,
+      income,
+      location,
+      fatherName,
+      fatherOccupation,
+      motherName,
+      motherOccupation,
+      bio,
+      rashi,
+      nakshatra,
+      birthTime,
+      birthPlace,
+    ];
+
+    int filledCount = fields
+        .where((f) => f != null && f.toString().trim().isNotEmpty)
+        .length;
+
+    // Age and height are required ints/doubles, so they are always "filled" in this mock setup
+    // Siblings is an int
+    filledCount += 3;
+
+    // Photos list
+    if (photos.isNotEmpty) filledCount++;
+
+    // Total fields considered: fields list (15) + 3 (age, height, siblings) + 1 (photos) = 19
+    return (filledCount / 19).clamp(0.0, 1.0);
+  }
 }
