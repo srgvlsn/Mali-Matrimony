@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/registration_data.dart';
 import '../utils/auto_save.dart';
+import '../utils/app_styles.dart';
 import 'register_step5_profile.dart';
 import '../utils/registration_draft.dart';
 
@@ -27,10 +28,13 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFD1C8),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFD1C8),
+        // Background color handled by Theme
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF820815)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onPressed: () => Navigator.pop(context), // back to Step 3
         ),
       ),
@@ -48,10 +52,10 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Step label
-                        const Text(
+                        Text(
                           "· Step 4 of 5 ·",
                           style: TextStyle(
-                            color: Color(0xFF820815),
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -61,18 +65,18 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
                         LinearProgressIndicator(
                           value: 4 / 5,
                           minHeight: 6,
-                          backgroundColor: Color(0xFFFFB8AB),
-                          color: Color(0xFF820815),
+                          backgroundColor: const Color(0xFFFFB8AB),
+                          color: Theme.of(context).colorScheme.primary,
                           borderRadius: BorderRadius.circular(100),
                         ),
                         const SizedBox(height: 32),
 
-                        const Text(
+                        Text(
                           "Career & Work Details",
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF820815),
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -131,7 +135,7 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
 
                         // Work Mode
                         DropdownButtonFormField<String>(
-                          decoration: _decoration("Work Mode"),
+                          decoration: InputDecoration(labelText: "Work Mode"),
                           initialValue: workMode,
                           items: const [
                             DropdownMenuItem(
@@ -163,7 +167,7 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
                         const SizedBox(height: 32),
 
                         ElevatedButton(
-                          style: _buttonStyle(),
+                          style: AppStyles.primaryButtonStyle,
                           onPressed: () async {
                             if (_formKey.currentState!.validate()) {
                               widget.data.education = educationController.text;
@@ -245,32 +249,8 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
     return TextFormField(
       controller: controller,
       keyboardType: keyboard,
-      decoration: _decoration(label),
+      decoration: InputDecoration(labelText: label),
       validator: validator,
-    );
-  }
-
-  InputDecoration _decoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF820815)),
-      enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815)),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815), width: 2),
-        borderRadius: BorderRadius.circular(100),
-      ),
-    );
-  }
-
-  ButtonStyle _buttonStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF820815),
-      foregroundColor: const Color(0xFFFFD1C8),
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
     );
   }
 }

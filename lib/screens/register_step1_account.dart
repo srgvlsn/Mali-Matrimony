@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/registration_data.dart';
 import '../utils/auto_save.dart';
+import '../utils/app_styles.dart';
 import 'register_step2_personal.dart';
 
 class RegisterStep1Account extends StatefulWidget {
@@ -27,12 +28,15 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFD1C8),
+      // Background color is handled by Theme (scaffoldBackgroundColor)
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFD1C8),
+        // Background color handled by Theme
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF820815)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onPressed: () {
             Navigator.pop(context); // goes back to Login
           },
@@ -51,10 +55,10 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
+                        Text(
                           "· Step 1 of 5 ·",
                           style: TextStyle(
-                            color: Color(0xFF820815),
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -63,19 +67,21 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
                         LinearProgressIndicator(
                           value: 1 / 5, // Step 1
                           minHeight: 6,
-                          backgroundColor: Color(0xFFFFB8AB),
-                          color: Color(0xFF820815),
+                          backgroundColor: const Color(
+                            0xFFFFB8AB,
+                          ), // Keep specific color if not in theme
+                          color: Theme.of(context).colorScheme.primary,
                           borderRadius: BorderRadius.circular(100),
                         ),
 
                         const SizedBox(height: 32),
 
-                        const Text(
+                        Text(
                           "Create Account",
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF820815),
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -164,7 +170,8 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
                         const SizedBox(height: 24),
 
                         ElevatedButton(
-                          style: _buttonStyle(),
+                          // Use AppStyles or default theme. AppStyles matches the previous specific padding.
+                          style: AppStyles.primaryButtonStyle,
                           onPressed: () async {
                             if (_formKey.currentState!.validate()) {
                               data.fullName = _fullName.text;
@@ -208,7 +215,8 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
     return TextFormField(
       controller: controller,
       keyboardType: keyboard,
-      decoration: _decoration(label),
+      // Uses global InputDecorationTheme from main.dart
+      decoration: InputDecoration(labelText: label),
       validator: validator,
     );
   }
@@ -224,39 +232,17 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
       controller: controller,
       obscureText: obscure,
       validator: validator,
-      decoration: _decoration(label).copyWith(
+      // Merge suffixIcon with global theme decoration
+      decoration: InputDecoration(
+        labelText: label,
         suffixIcon: IconButton(
           icon: Icon(
             obscure ? Icons.visibility_off : Icons.visibility,
-            color: const Color(0xFF820815),
+            color: Theme.of(context).colorScheme.primary,
           ),
           onPressed: toggle,
         ),
       ),
-    );
-  }
-
-  InputDecoration _decoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF820815)),
-      enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815)),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815), width: 2),
-        borderRadius: BorderRadius.circular(100),
-      ),
-    );
-  }
-
-  ButtonStyle _buttonStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF820815),
-      foregroundColor: const Color(0xFFFFD1C8),
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
     );
   }
 }

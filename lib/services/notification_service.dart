@@ -61,6 +61,33 @@ class NotificationService extends ChangeNotifier {
         type: NotificationType.system,
         isRead: true,
       ),
+      NotificationModel(
+        id: '6',
+        title: 'New Message',
+        message:
+            'Siddharth Mali sent you a message: "I will be in Pune next weekend."',
+        timestamp: DateTime.now().subtract(const Duration(hours: 1)),
+        type: NotificationType.message,
+        isRead: false,
+        relatedUserId: 'user_102',
+      ),
+      NotificationModel(
+        id: '7',
+        title: 'Profile Updated',
+        message: 'Neha Deshmukh has updated their profile photos',
+        timestamp: DateTime.now().subtract(const Duration(hours: 4)),
+        type: NotificationType.system,
+        isRead: false,
+        relatedUserId: 'user_103',
+      ),
+      NotificationModel(
+        id: '8',
+        title: 'New Shortlist',
+        message: 'A new user from Nashik has shortlisted your profile',
+        timestamp: DateTime.now().subtract(const Duration(hours: 12)),
+        type: NotificationType.profileView,
+        relatedUserId: 'user_103',
+      ),
     ]);
   }
 

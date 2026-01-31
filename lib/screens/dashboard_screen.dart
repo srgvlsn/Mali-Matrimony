@@ -5,11 +5,13 @@ import '../services/notification_service.dart';
 import '../models/notification_model.dart';
 import 'profile_detail_screen.dart';
 import 'matches_screen.dart';
-import 'search_screen.dart';
 import 'chat_list_screen.dart';
 import 'user_profile_screen.dart';
+import 'interests_screen.dart';
+import 'search_screen.dart';
 import '../services/profile_service.dart';
 import '../models/user_profile_model.dart';
+import '../utils/app_styles.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -31,22 +33,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFD1C8),
+      extendBody: true,
       appBar: AppBar(
         title: Text(
           _getAppBarTitle(),
-          style: const TextStyle(
-            color: Color(0xFF820815),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: const Color(0xFFFFD1C8),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         elevation: 0,
         systemOverlayStyle: const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: Brightness.dark,
         ),
         actions: [
           Consumer<NotificationService>(
@@ -55,9 +59,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               return Stack(
                 children: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.notifications_outlined,
-                      color: Color(0xFF820815),
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     onPressed: () {
                       _showNotificationPopup(context);
@@ -69,8 +73,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       top: 8,
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF820815),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
                           shape: BoxShape.circle,
                         ),
                         constraints: const BoxConstraints(
@@ -94,9 +98,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           if (_selectedIndex == 3) // Only on Profile Tab
             PopupMenuButton<String>(
-              icon: const Icon(
+              icon: Icon(
                 Icons.more_vert_rounded,
-                color: Color(0xFF820815),
+                color: Theme.of(context).colorScheme.primary,
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
@@ -114,53 +118,55 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       body: IndexedStack(index: _selectedIndex, children: _screens),
-      bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(100),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF820815).withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(100),
+            boxShadow: AppStyles.cardShadow,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: MediaQuery.removePadding(
+              context: context,
+              removeBottom: true,
+              child: BottomNavigationBar(
+                currentIndex: _selectedIndex,
+                onTap: (index) {
+                  setState(() {
+                    _selectedIndex = index;
+                  });
+                },
+                backgroundColor: Colors.white,
+                selectedItemColor: Theme.of(context).colorScheme.primary,
+                unselectedItemColor: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.4),
+                type: BottomNavigationBarType.fixed,
+                showSelectedLabels: true,
+                showUnselectedLabels: false,
+                elevation: 0,
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.home_rounded),
+                    label: "Home",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.favorite_rounded),
+                    label: "Matches",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.chat_bubble_rounded),
+                    label: "Chat",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.person_rounded),
+                    label: "Profile",
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(100),
-          child: BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            backgroundColor: Colors.white,
-            selectedItemColor: const Color(0xFF820815),
-            unselectedItemColor: const Color(0xFF820815).withValues(alpha: 0.4),
-            type: BottomNavigationBarType.fixed,
-            showSelectedLabels: true,
-            showUnselectedLabels: false,
-            elevation: 0,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_rounded),
-                label: "Home",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.favorite_rounded),
-                label: "Matches",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.chat_bubble_rounded),
-                label: "Chat",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_rounded),
-                label: "Profile",
-              ),
-            ],
           ),
         ),
       ),
@@ -203,7 +209,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   100,
                 ),
                 child: Material(
-                  color: const Color(0xFFFFD1C8),
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(32),
                   elevation: 8,
                   child: Consumer<NotificationService>(
@@ -225,22 +231,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
+                                  Text(
                                     "Notifications",
                                     style: TextStyle(
                                       fontSize: 22,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF820815),
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                   ),
                                   if (notificationService.unreadCount > 0)
                                     TextButton(
                                       onPressed: () =>
                                           notificationService.markAllAsRead(),
-                                      child: const Text(
+                                      child: Text(
                                         "Mark all as read",
                                         style: TextStyle(
-                                          color: Color(0xFF820815),
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -295,14 +305,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Icon(
             Icons.notifications_none_rounded,
             size: 64,
-            color: const Color(0xFF820815).withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(
             "No notifications yet",
             style: TextStyle(
               fontSize: 16,
-              color: const Color(0xFF820815).withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -327,12 +339,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF820815).withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
             service.getIconForType(notification.type),
-            color: const Color(0xFF820815),
+            color: Theme.of(context).colorScheme.primary,
             size: 20,
           ),
         ),
@@ -340,7 +352,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           notification.title,
           style: TextStyle(
             fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.bold,
-            color: const Color(0xFF820815),
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         subtitle: Column(
@@ -350,7 +362,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(
               notification.message,
               style: TextStyle(
-                color: const Color(0xFF820815).withValues(alpha: 0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -358,7 +372,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _getTimeAgo(notification.timestamp),
               style: TextStyle(
                 fontSize: 12,
-                color: const Color(0xFF820815).withValues(alpha: 0.4),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.4),
               ),
             ),
           ],
@@ -395,12 +411,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       value: title,
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF820815), size: 20),
+          Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
           const SizedBox(width: 12),
           Text(
             title,
-            style: const TextStyle(
-              color: Color(0xFF820815),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -420,7 +436,7 @@ class _HomeView extends StatelessWidget {
         final profiles = profileService.mockProfiles;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 32),
+          padding: const EdgeInsets.only(bottom: 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -429,10 +445,38 @@ class _HomeView extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: _buildSearchBar(context),
               ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    _buildQuickAction(
+                      context,
+                      Icons.star_rounded,
+                      "Interests",
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const InterestsScreen(),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    _buildQuickAction(
+                      context,
+                      Icons.verified_user_rounded,
+                      "Safe Matrimony",
+                      () {
+                        // Action for safe matrimony
+                      },
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 32),
 
               // Featured Matches Section
-              _buildSectionHeader("Featured Matches", () {
+              _buildSectionHeader(context, "Featured Matches", () {
                 // Navigate to matches or search
               }),
               const SizedBox(height: 16),
@@ -451,7 +495,7 @@ class _HomeView extends StatelessWidget {
               const SizedBox(height: 32),
 
               // Recent Members Section
-              _buildSectionHeader("Recent Members", () {
+              _buildSectionHeader(context, "Recent Members", () {
                 // Navigate to search
               }),
               const SizedBox(height: 16),
@@ -471,7 +515,11 @@ class _HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, VoidCallback onSeeAll) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    VoidCallback onSeeAll,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
@@ -479,10 +527,10 @@ class _HomeView extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF820815),
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           TextButton(
@@ -490,7 +538,9 @@ class _HomeView extends StatelessWidget {
             child: Text(
               "See All",
               style: TextStyle(
-                color: const Color(0xFF820815).withValues(alpha: 0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.6),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -516,13 +566,7 @@ class _HomeView extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF820815).withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: AppStyles.cardShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -548,10 +592,10 @@ class _HomeView extends StatelessWidget {
                 children: [
                   Text(
                     "${profile.name}, ${profile.age}",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: Color(0xFF820815),
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -561,16 +605,18 @@ class _HomeView extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 13,
-                      color: const Color(0xFF820815).withValues(alpha: 0.6),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.location_on,
                         size: 14,
-                        color: Color(0xFF820815),
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(width: 4),
                       Expanded(
@@ -578,9 +624,9 @@ class _HomeView extends StatelessWidget {
                           profile.location.split(',')[0],
                           style: TextStyle(
                             fontSize: 12,
-                            color: const Color(
-                              0xFF820815,
-                            ).withValues(alpha: 0.4),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.4),
                           ),
                         ),
                       ),
@@ -613,21 +659,21 @@ class _HomeView extends StatelessWidget {
         ),
         title: Text(
           profile.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF820815),
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         subtitle: Text(
           "${profile.age} yrs • ${profile.location.split(',')[0]}",
           style: TextStyle(
-            color: const Color(0xFF820815).withValues(alpha: 0.6),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           ),
         ),
-        trailing: const Icon(
+        trailing: Icon(
           Icons.arrow_forward_ios,
           size: 16,
-          color: Color(0xFF820815),
+          color: Theme.of(context).colorScheme.primary,
         ),
         onTap: () {
           Navigator.push(
@@ -655,25 +701,76 @@ class _HomeView extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(100),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF820815).withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: AppStyles.cardShadow,
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, color: Color(0xFF820815)),
+            Icon(Icons.search, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 12),
             Text(
               "Search by name, location, or caste...",
               style: TextStyle(
-                color: const Color(0xFF820815).withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.5),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAction(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppStyles.cardShadow,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

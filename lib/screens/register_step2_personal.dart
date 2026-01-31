@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/registration_data.dart';
 import '../utils/auto_save.dart';
+import '../utils/app_styles.dart';
 import 'register_step3_community.dart';
 
 class RegisterStep2Personal extends StatefulWidget {
@@ -23,12 +24,15 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFD1C8),
+      // Background color handled by Theme
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFD1C8),
+        // Background color handled by Theme
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF820815)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onPressed: () => Navigator.pop(context), // back to Step 1
         ),
       ),
@@ -46,10 +50,10 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // 🔹 Step text
-                        const Text(
+                        Text(
                           "· Step 2 of 5 ·",
                           style: TextStyle(
-                            color: Color(0xFF820815),
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -60,18 +64,18 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
                           value: 2 / 5,
                           minHeight: 6,
                           backgroundColor: const Color(0xFFFFB8AB),
-                          color: const Color(0xFF820815),
+                          color: Theme.of(context).colorScheme.primary,
                           borderRadius: BorderRadius.circular(100),
                         ),
 
                         const SizedBox(height: 32),
 
-                        const Text(
+                        Text(
                           "Personal Information",
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF820815),
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -79,7 +83,9 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
                         // Date of Birth
                         TextFormField(
                           readOnly: true,
-                          decoration: _decoration("Date of Birth"),
+                          decoration: InputDecoration(
+                            labelText: "Date of Birth",
+                          ),
                           controller: TextEditingController(
                             text: selectedDob == null
                                 ? ""
@@ -112,7 +118,7 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
 
                         // Gender
                         DropdownButtonFormField<String>(
-                          decoration: _decoration("Gender"),
+                          decoration: InputDecoration(labelText: "Gender"),
                           initialValue: selectedGender,
                           items: const [
                             DropdownMenuItem(
@@ -142,7 +148,7 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
                         TextFormField(
                           controller: heightController,
                           keyboardType: TextInputType.number,
-                          decoration: _decoration("Height (cm)"),
+                          decoration: InputDecoration(labelText: "Height (cm)"),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return "Please enter your height";
@@ -157,7 +163,9 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
 
                         // Marital Status
                         DropdownButtonFormField<String>(
-                          decoration: _decoration("Marital Status"),
+                          decoration: InputDecoration(
+                            labelText: "Marital Status",
+                          ),
                           initialValue: selectedMaritalStatus,
                           items: const [
                             DropdownMenuItem(
@@ -185,7 +193,7 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
 
                         // Next Button
                         ElevatedButton(
-                          style: _buttonStyle(),
+                          style: AppStyles.primaryButtonStyle,
                           onPressed: () async {
                             if (_formKey.currentState!.validate()) {
                               widget.data.gender = selectedGender;
@@ -217,30 +225,6 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
           );
         },
       ),
-    );
-  }
-
-  InputDecoration _decoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF820815)),
-      enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815)),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815), width: 2),
-        borderRadius: BorderRadius.circular(100),
-      ),
-    );
-  }
-
-  ButtonStyle _buttonStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF820815),
-      foregroundColor: const Color(0xFFFFD1C8),
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/user_profile_model.dart';
 import '../services/profile_service.dart';
+import '../services/interest_service.dart';
+import 'package:provider/provider.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
   final String userId;
@@ -489,79 +491,98 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   Widget _buildBottomActions() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+    return Consumer<InterestService>(
+      builder: (context, interestService, child) {
+        final interestStatus = interestService.getStatusWithUser(widget.userId);
+        final bool hasSentInterest = interestStatus != null;
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                setState(() {
-                  isShortlisted = !isShortlisted;
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isShortlisted
-                          ? 'Added to shortlist'
-                          : 'Removed from shortlist',
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    ProfileService.instance.toggleShortlist(widget.userId);
+                    setState(() {
+                      isShortlisted = ProfileService.instance.isShortlisted(
+                        widget.userId,
+                      );
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isShortlisted
+                              ? 'Added to shortlist'
+                              : 'Removed from shortlist',
+                        ),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF820815)),
+                    backgroundColor: isShortlisted
+                        ? const Color(0xFF820815)
+                        : Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                    duration: const Duration(seconds: 1),
                   ),
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF820815)),
-                backgroundColor: isShortlisted
-                    ? const Color(0xFF820815)
-                    : Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  child: Text(
+                    isShortlisted ? 'Shortlisted' : 'Shortlist',
+                    style: TextStyle(
+                      color: isShortlisted
+                          ? Colors.white
+                          : const Color(0xFF820815),
+                    ),
+                  ),
                 ),
               ),
-              child: Text(
-                isShortlisted ? 'Shortlisted' : 'Shortlist',
-                style: TextStyle(
-                  color: isShortlisted ? Colors.white : const Color(0xFF820815),
+              const SizedBox(width: 16),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: hasSentInterest
+                      ? null
+                      : () {
+                          interestService.sendInterest(widget.userId);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Interest sent successfully!'),
+                            ),
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasSentInterest
+                        ? Colors.grey
+                        : const Color(0xFF820815),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: Text(
+                    hasSentInterest ? 'Interest Sent' : 'Send Interest',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Interest sent successfully!')),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF820815),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              child: const Text(
-                'Send Interest',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

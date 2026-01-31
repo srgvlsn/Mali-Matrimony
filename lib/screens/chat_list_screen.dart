@@ -17,7 +17,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final conversations = _chatService.conversations;
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
       itemCount: conversations.length,
       itemBuilder: (context, index) {
         final conv = conversations[index];

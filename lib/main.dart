@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/notification_service.dart';
 import 'services/profile_service.dart';
+import 'services/interest_service.dart';
+import 'services/chat_service.dart';
 
 void main() {
   runApp(
@@ -10,6 +12,8 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => NotificationService()),
         ChangeNotifierProvider(create: (_) => ProfileService()),
+        ChangeNotifierProvider(create: (_) => InterestService()),
+        ChangeNotifierProvider(create: (_) => ChatService()),
       ],
       child: const MaliMatrimonyApp(),
     ),

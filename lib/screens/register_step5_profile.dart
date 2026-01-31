@@ -3,6 +3,7 @@ import 'package:project_mali_matrimony/utils/registration_draft.dart';
 import '../services/auth_service.dart';
 import '../models/registration_data.dart';
 import '../utils/auto_save.dart';
+import '../utils/app_styles.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dashboard_screen.dart';
@@ -64,10 +65,13 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFD1C8),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFD1C8),
+        // Background color handled by Theme
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF820815)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: Theme.of(context).colorScheme.primary,
+          ),
           onPressed: () => Navigator.pop(context), // back to Step 4
         ),
       ),
@@ -84,10 +88,10 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
+                        Text(
                           "· Step 5 of 5 ·",
                           style: TextStyle(
-                            color: Color(0xFF820815),
+                            color: Theme.of(context).colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -96,18 +100,18 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                         LinearProgressIndicator(
                           value: 5 / 5,
                           minHeight: 6,
-                          backgroundColor: Color(0xFFFFB8AB),
-                          color: Color(0xFF820815),
+                          backgroundColor: const Color(0xFFFFB8AB),
+                          color: Theme.of(context).colorScheme.primary,
                           borderRadius: BorderRadius.circular(100),
                         ),
                         const SizedBox(height: 32),
 
-                        const Text(
+                        Text(
                           "Profile Details",
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF820815),
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -122,18 +126,22 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                                 ? FileImage(_profileImage!)
                                 : null,
                             child: _profileImage == null
-                                ? const Icon(
+                                ? Icon(
                                     Icons.camera_alt,
                                     size: 32,
-                                    color: Color(0xFF820815),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   )
                                 : null,
                           ),
                         ),
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           "Add Profile Photo (Required)",
-                          style: TextStyle(color: Color(0xFF820815)),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                         ),
 
                         const SizedBox(height: 32),
@@ -142,7 +150,7 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                         TextFormField(
                           controller: aboutMeController,
                           maxLines: 4,
-                          decoration: _decoration("About Me"),
+                          decoration: InputDecoration(labelText: "About Me"),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return "Please tell us about yourself";
@@ -160,18 +168,13 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                           onPressed: _pickAdditionalImages,
                           icon: const Icon(
                             Icons.photo_library,
-                            color: Color(0xFF820815),
+                            // Icon color handled by style
                           ),
                           label: const Text(
                             "Add Additional Photos (Optional)",
-                            style: TextStyle(color: Color(0xFF820815)),
+                            // Text color handled by style
                           ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFF820815)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                          ),
+                          style: AppStyles.outlinedButtonStyle,
                         ),
                         if (_additionalImages.isNotEmpty) ...[
                           const SizedBox(height: 16),
@@ -204,9 +207,10 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                                             });
                                           },
                                           child: Container(
-                                            color: const Color(
-                                              0xFF820815,
-                                            ).withValues(alpha: 0.7),
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withValues(alpha: 0.7),
                                             child: const Icon(
                                               Icons.close,
                                               size: 20,
@@ -229,7 +233,9 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                         TextFormField(
                           controller: partnerPreferenceController,
                           maxLines: 3,
-                          decoration: _decoration("Partner Preferences"),
+                          decoration: InputDecoration(
+                            labelText: "Partner Preferences",
+                          ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return "Please enter partner preferences";
@@ -244,7 +250,7 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                         const SizedBox(height: 32),
 
                         ElevatedButton(
-                          style: _buttonStyle(),
+                          style: AppStyles.primaryButtonStyle,
                           onPressed: () async {
                             if (_profileImage == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -299,30 +305,6 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
           );
         },
       ),
-    );
-  }
-
-  InputDecoration _decoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF820815)),
-      enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815)),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815), width: 2),
-        borderRadius: BorderRadius.circular(20),
-      ),
-    );
-  }
-
-  ButtonStyle _buttonStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF820815),
-      foregroundColor: const Color(0xFFFFD1C8),
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
     );
   }
 }

@@ -21,7 +21,7 @@ class UserProfileScreen extends StatelessWidget {
         final completion = profile.completionPercentage;
 
         return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
