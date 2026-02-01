@@ -69,7 +69,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   const SectionTitle(title: 'Community'),
                   _buildCommunitySection(),
                   const SizedBox(height: 24),
-                  const SectionTitle(title: 'Horoscope Details'),
+                  const SectionTitle(title: 'Horoscope'),
                   _buildHoroscopeSection(),
                   const SizedBox(height: 24),
                 ],
@@ -185,7 +185,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         Row(
           children: [
             StatChip(label: '${profile.age} yrs'),
-            StatChip(label: "${profile.height}'"),
+            StatChip(label: '${profile.height.toInt()} cm'),
             StatChip(label: profile.location.split(',')[0]),
           ],
         ),
@@ -258,100 +258,58 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   Widget _buildHoroscopeSection() {
-    bool hasTemplate =
-        profile.rashi != null ||
-        profile.nakshatra != null ||
-        profile.birthTime != null ||
-        profile.birthPlace != null;
+    if (profile.horoscopeImageUrl == null) {
+      return const ContentCard(text: 'Horoscope not uploaded.');
+    }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (hasTemplate)
-          DetailListCard(
-            items: [
-              if (profile.rashi != null)
-                {
-                  'label': 'Rashi',
-                  'value': profile.rashi!,
-                  'icon': Icons.brightness_high,
-                },
-              if (profile.nakshatra != null)
-                {
-                  'label': 'Nakshatra',
-                  'value': profile.nakshatra!,
-                  'icon': Icons.wb_sunny_outlined,
-                },
-              if (profile.birthTime != null)
-                {
-                  'label': 'Time of Birth',
-                  'value': profile.birthTime!,
-                  'icon': Icons.access_time,
-                },
-              if (profile.birthPlace != null)
-                {
-                  'label': 'Place of Birth',
-                  'value': profile.birthPlace!,
-                  'icon': Icons.location_on_outlined,
-                },
-            ],
+    return GestureDetector(
+      onTap: () => _showFullScreenImage(context, profile.horoscopeImageUrl!),
+      child: Container(
+        width: double.infinity,
+        height: 200,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          image: DecorationImage(
+            image: NetworkImage(profile.horoscopeImageUrl!),
+            fit: BoxFit.cover,
           ),
-        if (hasTemplate && profile.horoscopeImageUrl != null)
-          const SizedBox(height: 16),
-        if (profile.horoscopeImageUrl != null)
-          GestureDetector(
-            onTap: () =>
-                _showFullScreenImage(context, profile.horoscopeImageUrl!),
-            child: Container(
-              width: double.infinity,
-              height: 200,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-                image: DecorationImage(
-                  image: NetworkImage(profile.horoscopeImageUrl!),
-                  fit: BoxFit.cover,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
                   ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(30),
-                          bottomRight: Radius.circular(30),
-                        ),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'View Horoscope Image',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                ),
+                child: const Center(
+                  child: Text(
+                    'View Horoscope Image',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        if (!hasTemplate && profile.horoscopeImageUrl == null)
-          const ContentCard(text: 'Horoscope details not provided.'),
-      ],
+          ],
+        ),
+      ),
     );
   }
 

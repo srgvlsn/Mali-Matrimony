@@ -1,21 +1,40 @@
-class AuthService {
+import 'package:flutter/foundation.dart';
+import 'package:shared/shared.dart';
+import '../models/registration_data.dart';
+
+class AuthService extends ChangeNotifier {
   AuthService._internal();
 
   static final AuthService instance = AuthService._internal();
 
-  /// Simulates a login attempt
-  Future<bool> login(String emailOrPhone, String password) async {
-    await Future.delayed(const Duration(seconds: 2));
-    return emailOrPhone.isNotEmpty && password.isNotEmpty;
+  UserProfile? get currentUser => MockBackend.instance.currentUser;
+  bool get isLoggedIn => MockBackend.instance.currentUserId != null;
+
+  void refresh() {
+    notifyListeners();
   }
 
-  /// Simulates a registration
-  Future<bool> register() async {
-    await Future.delayed(const Duration(seconds: 2));
-    return true;
+  /// Simulates a login attempt using the Mock Backend
+  Future<bool> login(String emailOrPhone, String password) async {
+    final response = await MockBackend.instance.login(emailOrPhone, password);
+    if (response.success) {
+      notifyListeners();
+    }
+    return response.success;
+  }
+
+  /// Simulates a registration using the Mock Backend
+  Future<bool> register(RegistrationData data) async {
+    final user = data.toUserProfile();
+    final response = await MockBackend.instance.registerUser(user);
+    if (response.success) {
+      notifyListeners();
+    }
+    return response.success;
   }
 
   Future<void> logout() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await MockBackend.instance.logout();
+    notifyListeners();
   }
 }

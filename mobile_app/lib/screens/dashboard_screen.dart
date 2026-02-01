@@ -434,80 +434,94 @@ class _HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ProfileService>(
       builder: (context, profileService, child) {
-        final profiles = profileService.mockProfiles;
+        if (profileService.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: CustomSearchBar(),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    QuickActionCard(
-                      icon: Icons.star_rounded,
-                      label: "Interests",
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const InterestsScreen(),
+        final profiles = profileService.profiles;
+
+        return RefreshIndicator(
+          onRefresh: () => profileService.fetchProfiles(),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 120),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24),
+                  child: CustomSearchBar(),
+                ),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      QuickActionCard(
+                        icon: Icons.star_rounded,
+                        label: "Interests",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const InterestsScreen(),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    QuickActionCard(
-                      icon: Icons.verified_user_rounded,
-                      label: "Safe Matrimony",
-                      onTap: () {
-                        // Action for safe matrimony
-                      },
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      QuickActionCard(
+                        icon: Icons.verified_user_rounded,
+                        label: "Safe Matrimony",
+                        onTap: () {
+                          // Action for safe matrimony
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // Featured Matches Section
-              _buildSectionHeader(context, "Featured Matches", () {
-                // Navigate to matches or search
-              }),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 280,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: profiles.length,
-                  itemBuilder: (context, index) {
-                    return UserCard(profile: profiles[index], isFeatured: true);
-                  },
+                // Featured Matches Section
+                _buildSectionHeader(context, "Featured Matches", () {
+                  // Navigate to matches or search
+                }),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 280,
+                  child: profiles.isEmpty
+                      ? const Center(child: Text("No featured matches"))
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: profiles.length,
+                          itemBuilder: (context, index) {
+                            return UserCard(
+                              profile: profiles[index],
+                              isFeatured: true,
+                            );
+                          },
+                        ),
                 ),
-              ),
 
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // Recent Members Section
-              _buildSectionHeader(context, "Recent Members", () {
-                // Navigate to search
-              }),
-              const SizedBox(height: 16),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: profiles.length > 3 ? 3 : profiles.length,
-                itemBuilder: (context, index) {
-                  return UserCard(profile: profiles[index]);
-                },
-              ),
-            ],
+                // Recent Members Section
+                _buildSectionHeader(context, "Recent Members", () {
+                  // Navigate to search
+                }),
+                const SizedBox(height: 16),
+                profiles.isEmpty
+                    ? const Center(child: Text("No recent members"))
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        itemCount: profiles.length > 3 ? 3 : profiles.length,
+                        itemBuilder: (context, index) {
+                          return UserCard(profile: profiles[index]);
+                        },
+                      ),
+              ],
+            ),
           ),
         );
       },

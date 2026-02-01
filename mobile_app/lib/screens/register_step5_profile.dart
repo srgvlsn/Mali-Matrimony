@@ -22,6 +22,7 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
   final partnerPreferenceController = TextEditingController();
 
   File? _profileImage;
+  File? _horoscopeImage;
   List<File> _additionalImages = [];
   final ImagePicker _picker = ImagePicker();
 
@@ -32,6 +33,9 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
     super.initState();
     if (widget.data.profileImagePath != null) {
       _profileImage = File(widget.data.profileImagePath!);
+    }
+    if (widget.data.horoscopeImagePath != null) {
+      _horoscopeImage = File(widget.data.horoscopeImagePath!);
     }
     if (widget.data.additionalImagePaths != null) {
       _additionalImages = widget.data.additionalImagePaths!
@@ -56,6 +60,15 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
     if (images.isNotEmpty) {
       setState(() {
         _additionalImages.addAll(images.map((x) => File(x.path)));
+      });
+    }
+  }
+
+  Future<void> _pickHoroscopeImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _horoscopeImage = File(image.path);
       });
     }
   }
@@ -149,7 +162,8 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                         // About Me
                         TextFormField(
                           controller: aboutMeController,
-                          maxLines: 4,
+                          minLines: 1,
+                          maxLines: 5,
                           decoration: InputDecoration(labelText: "About Me"),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -227,12 +241,39 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                           ),
                         ],
 
+                        const SizedBox(height: 16),
+                        // Horoscope Upload
+                        OutlinedButton.icon(
+                          onPressed: _pickHoroscopeImage,
+                          icon: const Icon(Icons.auto_awesome),
+                          label: Text(
+                            _horoscopeImage == null
+                                ? "Add Horoscope (Optional)"
+                                : "Change Horoscope",
+                          ),
+                          style: AppStyles.outlinedButtonStyle,
+                        ),
+                        if (_horoscopeImage != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(
+                                _horoscopeImage!,
+                                height: 80,
+                                width: 80,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+
                         const SizedBox(height: 24),
 
                         // Partner Preferences
                         TextFormField(
                           controller: partnerPreferenceController,
-                          maxLines: 3,
+                          minLines: 1,
+                          maxLines: 5,
                           decoration: InputDecoration(
                             labelText: "Partner Preferences",
                           ),
@@ -268,6 +309,8 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                                   partnerPreferenceController.text;
                               widget.data.profileImagePath =
                                   _profileImage?.path;
+                              widget.data.horoscopeImagePath =
+                                  _horoscopeImage?.path;
                               widget.data.additionalImagePaths =
                                   _additionalImages.map((f) => f.path).toList();
 
@@ -275,7 +318,7 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
 
                               // 2️⃣ Call AuthService register
                               final success = await AuthService.instance
-                                  .register();
+                                  .register(widget.data);
 
                               if (!mounted) return;
 
@@ -308,4 +351,3 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
     );
   }
 }
-

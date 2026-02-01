@@ -61,4 +61,11 @@ class AdminMockService {
   void rejectUser(String userId) {
     // Keep unverified
   }
+
+  void updateUser(UserProfile updatedUser) {
+    final index = _allUsers.indexWhere((u) => u.id == updatedUser.id);
+    if (index != -1) {
+      _allUsers[index] = updatedUser;
+    }
+  }
 }

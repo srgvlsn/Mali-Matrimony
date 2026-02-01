@@ -15,13 +15,23 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   bool _isLoading = false;
 
   void _login() async {
-    setState(() => _isLoading = true);
-    // Simulate API delay
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const AdminShell()),
+    if (_idController.text == "admin@mali" &&
+        _passController.text == "Admin@123") {
+      setState(() => _isLoading = true);
+      // Simulate API delay
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminShell()),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Invalid Admin Credentials"),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -180,4 +190,3 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     );
   }
 }
-

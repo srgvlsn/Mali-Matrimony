@@ -20,17 +20,22 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    _allProfiles = _profileService.mockProfiles;
+    _allProfiles = _profileService.profiles;
     _filteredProfiles = []; // Initially empty until user starts typing
   }
 
-  void _filterProfiles(String query) {
-    setState(() {
-      if (query.isEmpty) {
+  Future<void> _filterProfiles(String query) async {
+    if (query.isEmpty) {
+      setState(() {
         _filteredProfiles = [];
-        return;
-      }
-      _filteredProfiles = _profileService.searchProfiles(location: query);
+      });
+      return;
+    }
+
+    final results = await _profileService.searchProfiles(location: query);
+
+    setState(() {
+      _filteredProfiles = results;
       // If location search yields nothing, try name/caste for a better UX
       if (_filteredProfiles.isEmpty) {
         _filteredProfiles = _allProfiles
@@ -167,4 +172,3 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 }
-

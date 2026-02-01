@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
+import 'user_edit_dialog.dart';
 
 class UserDetailDialog extends StatelessWidget {
   final UserProfile user;
@@ -113,10 +114,17 @@ class UserDetailDialog extends StatelessWidget {
                     child: const Text("Close"),
                   ),
                   const SizedBox(width: 16),
-                  ElevatedButton(
-                    onPressed: () {},
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final result = await UserEditDialog.show(context, user);
+                      if (result == true) {
+                        // Dialog was closed, changes were saved
+                      }
+                    },
                     style: AppStyles.primaryButtonStyle,
-                    child: const Text("Message User"),
+                    icon: const Icon(Icons.edit),
+                    label: const Text("Edit User"),
                   ),
                 ],
               ),

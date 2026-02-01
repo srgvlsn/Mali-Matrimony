@@ -6,52 +6,82 @@ class ProfileService extends ChangeNotifier {
   ProfileService._internal();
   factory ProfileService() => instance;
 
-  final Set<String> _shortlistedIds = {};
+  List<UserProfile> _profiles = [];
+  Set<String> _shortlistedIds = {};
+  bool _isLoading = false;
 
-  final List<UserProfile> _mockProfiles = MockData.profiles;
-
-  List<UserProfile> get mockProfiles => _mockProfiles;
+  List<UserProfile> get profiles => _profiles;
   Set<String> get shortlistedIds => _shortlistedIds;
+  bool get isLoading => _isLoading;
 
-  bool isShortlisted(String id) => _shortlistedIds.contains(id);
+  /// Fetch profiles from the mock backend
+  Future<void> fetchProfiles() async {
+    _isLoading = true;
+    notifyListeners();
 
-  void toggleShortlist(String id) {
-    if (_shortlistedIds.contains(id)) {
-      _shortlistedIds.remove(id);
-    } else {
-      _shortlistedIds.add(id);
+    final response = await MockBackend.instance.getProfiles();
+    if (response.success && response.data != null) {
+      _profiles = response.data!;
     }
+
+    final shortlistResponse = await MockBackend.instance.getShortlistedIds();
+    if (shortlistResponse.success && shortlistResponse.data != null) {
+      _shortlistedIds = shortlistResponse.data!;
+    }
+
+    _isLoading = false;
     notifyListeners();
   }
 
-  List<UserProfile> shortlistProfiles() {
-    return _mockProfiles.where((p) => _shortlistedIds.contains(p.id)).toList();
+  bool isShortlisted(String id) => _shortlistedIds.contains(id);
+
+  Future<void> toggleShortlist(String id) async {
+    final response = await MockBackend.instance.toggleShortlist(id);
+    if (response.success) {
+      if (response.data == true) {
+        _shortlistedIds.add(id);
+      } else {
+        _shortlistedIds.remove(id);
+      }
+      notifyListeners();
+    }
   }
 
-  List<UserProfile> searchProfiles({
+  List<UserProfile> shortlistProfiles() {
+    return _profiles.where((p) => _shortlistedIds.contains(p.id)).toList();
+  }
+
+  Future<List<UserProfile>> searchProfiles({
     int? minAge,
     int? maxAge,
     String? location,
     String? caste,
-  }) {
-    return _mockProfiles.where((p) {
-      if (minAge != null && p.age < minAge) return false;
-      if (maxAge != null && p.age > maxAge) return false;
-      if (location != null &&
-          !p.location.toLowerCase().contains(location.toLowerCase())) {
-        return false;
-      }
-      if (caste != null &&
-          !p.caste.toLowerCase().contains(caste.toLowerCase())) {
-        return false;
+  }) async {
+    final response = await MockBackend.instance.searchProfiles(
+      minAge: minAge,
+      maxAge: maxAge,
+      location: location,
+      caste: caste,
+    );
+    return response.data ?? [];
+  }
+
+  Future<bool> updateProfile(UserProfile user) async {
+    final response = await MockBackend.instance.updateProfile(user);
+    if (response.success) {
+      final index = _profiles.indexWhere((p) => p.id == user.id);
+      if (index != -1) {
+        _profiles[index] = user;
+        notifyListeners();
       }
       return true;
-    }).toList();
+    }
+    return false;
   }
 
   UserProfile? getProfileById(String id) {
     try {
-      return _mockProfiles.firstWhere((p) => p.id == id);
+      return _profiles.firstWhere((p) => p.id == id);
     } catch (e) {
       return null;
     }

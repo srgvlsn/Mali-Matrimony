@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/admin_mock_service.dart';
 import 'package:shared/shared.dart';
 import '../widgets/user_detail_dialog.dart';
+import '../widgets/user_edit_dialog.dart';
 
 class UserListScreen extends StatefulWidget {
   const UserListScreen({super.key});
@@ -170,6 +171,22 @@ class _UserListScreenState extends State<UserListScreen> {
                               ),
                               IconButton(
                                 icon: const Icon(
+                                  Icons.edit,
+                                  color: AppStyles.primary,
+                                ),
+                                onPressed: () async {
+                                  final result = await UserEditDialog.show(
+                                    context,
+                                    user,
+                                  );
+                                  if (result == true && context.mounted) {
+                                    setState(() {});
+                                  }
+                                },
+                                tooltip: "Edit User",
+                              ),
+                              IconButton(
+                                icon: const Icon(
                                   Icons.block,
                                   color: Colors.red,
                                 ),
@@ -200,4 +217,3 @@ class _UserListScreenState extends State<UserListScreen> {
     );
   }
 }
-

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared/shared.dart';
 import '../services/profile_service.dart';
 import 'profile_detail_screen.dart';
@@ -15,21 +16,29 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          _buildTabBar(),
-          Expanded(
-            child: TabBarView(
-              children: [
-                _buildProfilesList(_profileService.mockProfiles),
-                _buildProfilesList(_profileService.shortlistProfiles()),
-              ],
-            ),
+    return Consumer<ProfileService>(
+      builder: (context, profileService, child) {
+        if (profileService.isLoading && profileService.profiles.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return DefaultTabController(
+          length: 2,
+          child: Column(
+            children: [
+              _buildTabBar(),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    _buildProfilesList(profileService.profiles),
+                    _buildProfilesList(profileService.shortlistProfiles()),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

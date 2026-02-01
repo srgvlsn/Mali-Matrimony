@@ -6,14 +6,26 @@ import 'services/notification_service.dart';
 import 'services/profile_service.dart';
 import 'services/interest_service.dart';
 import 'services/chat_service.dart';
+import 'services/auth_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final profileService = ProfileService();
+  final interestService = InterestService();
+
+  // ignore: unawaited_futures
+  profileService.fetchProfiles();
+  // ignore: unawaited_futures
+  interestService.fetchInterests();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NotificationService()),
-        ChangeNotifierProvider(create: (_) => ProfileService()),
-        ChangeNotifierProvider(create: (_) => InterestService()),
+        ChangeNotifierProvider.value(value: profileService),
+        ChangeNotifierProvider.value(value: interestService),
+        ChangeNotifierProvider.value(value: AuthService.instance),
         ChangeNotifierProvider(create: (_) => ChatService()),
       ],
       child: const MaliMatrimonyApp(),
