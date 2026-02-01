@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 
 class MockAnalyticsChart extends StatelessWidget {
   const MockAnalyticsChart({super.key});
@@ -87,3 +87,4 @@ class MockAnalyticsChart extends StatelessWidget {
     );
   }
 }
+

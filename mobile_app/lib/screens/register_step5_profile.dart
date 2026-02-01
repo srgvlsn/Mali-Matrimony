@@ -3,7 +3,7 @@ import 'package:project_mali_matrimony/utils/registration_draft.dart';
 import '../services/auth_service.dart';
 import '../models/registration_data.dart';
 import '../utils/auto_save.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dashboard_screen.dart';
@@ -308,3 +308,4 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
     );
   }
 }
+

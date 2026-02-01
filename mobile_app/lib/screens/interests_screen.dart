@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/interest_service.dart';
 import '../services/profile_service.dart';
-import '../models/interest_model.dart';
-import '../models/user_profile_model.dart';
+import 'package:shared/shared.dart';
 import 'profile_detail_screen.dart';
-import '../utils/app_styles.dart';
 
 class InterestsScreen extends StatelessWidget {
   const InterestsScreen({super.key});

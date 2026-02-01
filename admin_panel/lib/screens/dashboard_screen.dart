@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/admin_mock_service.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 import '../widgets/mock_analytics_chart.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
@@ -113,3 +113,4 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 }
+

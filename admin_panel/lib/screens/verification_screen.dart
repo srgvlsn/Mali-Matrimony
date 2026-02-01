@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/admin_mock_service.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 
 class VerificationScreen extends StatefulWidget {
   const VerificationScreen({super.key});
@@ -161,3 +161,4 @@ class _VerificationScreenState extends State<VerificationScreen> {
     );
   }
 }
+

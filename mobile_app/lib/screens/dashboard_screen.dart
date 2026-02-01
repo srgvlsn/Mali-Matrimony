@@ -8,10 +8,11 @@ import 'matches_screen.dart';
 import 'chat_list_screen.dart';
 import 'user_profile_screen.dart';
 import 'interests_screen.dart';
-import 'search_screen.dart';
 import '../services/profile_service.dart';
-import '../models/user_profile_model.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
+import '../widgets/user_card.dart';
+import '../widgets/custom_search_bar.dart';
+import '../widgets/quick_action_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -441,20 +442,19 @@ class _HomeView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: _buildSearchBar(context),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: CustomSearchBar(),
               ),
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
                   children: [
-                    _buildQuickAction(
-                      context,
-                      Icons.star_rounded,
-                      "Interests",
-                      () => Navigator.push(
+                    QuickActionCard(
+                      icon: Icons.star_rounded,
+                      label: "Interests",
+                      onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => const InterestsScreen(),
@@ -462,11 +462,10 @@ class _HomeView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _buildQuickAction(
-                      context,
-                      Icons.verified_user_rounded,
-                      "Safe Matrimony",
-                      () {
+                    QuickActionCard(
+                      icon: Icons.verified_user_rounded,
+                      label: "Safe Matrimony",
+                      onTap: () {
                         // Action for safe matrimony
                       },
                     ),
@@ -487,7 +486,7 @@ class _HomeView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: profiles.length,
                   itemBuilder: (context, index) {
-                    return _buildFeaturedCard(context, profiles[index]);
+                    return UserCard(profile: profiles[index], isFeatured: true);
                   },
                 ),
               ),
@@ -505,7 +504,7 @@ class _HomeView extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 itemCount: profiles.length > 3 ? 3 : profiles.length,
                 itemBuilder: (context, index) {
-                  return _buildRecentMemberCard(context, profiles[index]);
+                  return UserCard(profile: profiles[index]);
                 },
               ),
             ],
@@ -546,232 +545,6 @@ class _HomeView extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFeaturedCard(BuildContext context, UserProfile profile) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProfileDetailScreen(userId: profile.id),
-          ),
-        );
-      },
-      child: Container(
-        width: 200,
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: AppStyles.cardShadow,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                child: Image.network(
-                  profile.photos.isNotEmpty
-                      ? profile.photos[0]
-                      : 'https://via.placeholder.com/200x200',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${profile.name}, ${profile.age}",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    profile.occupation,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          profile.location.split(',')[0],
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentMemberCard(BuildContext context, UserProfile profile) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      color: Colors.white,
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: CircleAvatar(
-          radius: 30,
-          backgroundImage: NetworkImage(
-            profile.photos.isNotEmpty
-                ? profile.photos[0]
-                : 'https://via.placeholder.com/60x60',
-          ),
-        ),
-        title: Text(
-          profile.name,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        subtitle: Text(
-          "${profile.age} yrs • ${profile.location.split(',')[0]}",
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
-          ),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProfileDetailScreen(userId: profile.id),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SearchScreen()),
-        );
-      },
-      child: Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(100),
-          boxShadow: AppStyles.cardShadow,
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.search, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 12),
-            Text(
-              "Search by name, location, or caste...",
-              style: TextStyle(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.5),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickAction(
-    BuildContext context,
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-  ) {
-    return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppStyles.cardShadow,
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(20),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      icon,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

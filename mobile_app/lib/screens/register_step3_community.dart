@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/registration_data.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 import 'register_step4_career.dart';
 
 class RegisterStep3Community extends StatefulWidget {
@@ -256,3 +256,4 @@ class _RegisterStep3CommunityState extends State<RegisterStep3Community> {
     );
   }
 }
+

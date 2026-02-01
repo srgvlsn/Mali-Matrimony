@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/user_profile_model.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 
 class UserDetailDialog extends StatelessWidget {
   final UserProfile user;

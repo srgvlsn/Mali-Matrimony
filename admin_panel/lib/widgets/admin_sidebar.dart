@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 
 class AdminSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -149,3 +149,4 @@ class AdminSidebar extends StatelessWidget {
     );
   }
 }
+

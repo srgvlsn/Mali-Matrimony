@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 import 'admin_shell.dart';
 
 class AdminLoginScreen extends StatefulWidget {
@@ -180,3 +180,4 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     );
   }
 }
+

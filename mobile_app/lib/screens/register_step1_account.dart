@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/registration_data.dart';
 import '../utils/auto_save.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 import 'register_step2_personal.dart';
 
 class RegisterStep1Account extends StatefulWidget {
@@ -246,3 +246,4 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
     );
   }
 }
+

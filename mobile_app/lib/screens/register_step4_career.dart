@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/registration_data.dart';
 import '../utils/auto_save.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 import 'register_step5_profile.dart';
 import '../utils/registration_draft.dart';
 
@@ -254,3 +254,4 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
     );
   }
 }
+

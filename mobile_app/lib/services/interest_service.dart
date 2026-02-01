@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../models/interest_model.dart';
+import 'package:shared/shared.dart';
 
 class InterestService extends ChangeNotifier {
   static final InterestService instance = InterestService._internal();
@@ -83,3 +83,4 @@ class InterestService extends ChangeNotifier {
     );
   }
 }
+

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/app_styles.dart';
+import 'package:shared/shared.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -176,3 +176,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+

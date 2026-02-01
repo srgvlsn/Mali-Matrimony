@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/user_profile_model.dart';
+import 'package:shared/shared.dart';
 import '../services/profile_service.dart';
 import 'profile_detail_screen.dart';
-import '../utils/app_styles.dart';
 
 class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
