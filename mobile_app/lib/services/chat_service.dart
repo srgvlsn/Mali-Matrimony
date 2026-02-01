@@ -169,4 +169,34 @@ class ChatService extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  Conversation startConversation(
+    String otherUserId,
+    String otherUserName,
+    String otherUserPhoto,
+  ) {
+    // Check if conversation already exists
+    final existingIndex = _conversations.indexWhere(
+      (c) => c.otherUserId == otherUserId,
+    );
+
+    if (existingIndex != -1) {
+      return _conversations[existingIndex];
+    }
+
+    // Create new conversation
+    final newConversation = Conversation(
+      id: DateTime.now().toIso8601String(),
+      otherUserId: otherUserId,
+      otherUserName: otherUserName,
+      otherUserPhoto: otherUserPhoto,
+      lastMessage: '',
+      lastMessageTime: DateTime.now(),
+      unreadCount: 0,
+    );
+
+    _conversations.add(newConversation);
+    notifyListeners();
+    return newConversation;
+  }
 }

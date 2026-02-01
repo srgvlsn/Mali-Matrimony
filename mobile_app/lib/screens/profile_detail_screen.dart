@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/user_profile_model.dart';
 import '../services/profile_service.dart';
 import '../services/interest_service.dart';
+import '../models/interest_model.dart';
+import '../services/chat_service.dart';
+import 'chat_detail_screen.dart';
 import 'package:provider/provider.dart';
 
 class ProfileDetailScreen extends StatefulWidget {
@@ -554,7 +557,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
-                  onPressed: hasSentInterest
+                  onPressed: interestStatus == InterestStatus.accepted
+                      ? () {
+                          // Start conversation and navigate to chat
+                          final conversation = ChatService.instance
+                              .startConversation(
+                                widget.userId,
+                                profile.name,
+                                profile.photos.isNotEmpty
+                                    ? profile.photos[0]
+                                    : 'https://via.placeholder.com/150',
+                              );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ChatDetailScreen(conversation: conversation),
+                            ),
+                          );
+                        }
+                      : hasSentInterest
                       ? null
                       : () {
                           interestService.sendInterest(widget.userId);
@@ -565,7 +587,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                           );
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: hasSentInterest
+                    backgroundColor:
+                        hasSentInterest &&
+                            interestStatus != InterestStatus.accepted
                         ? Colors.grey
                         : const Color(0xFF820815),
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -573,9 +597,27 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: Text(
-                    hasSentInterest ? 'Interest Sent' : 'Send Interest',
-                    style: const TextStyle(color: Colors.white),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (interestStatus == InterestStatus.accepted)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8.0),
+                          child: Icon(
+                            Icons.chat_bubble_outline,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      Text(
+                        interestStatus == InterestStatus.accepted
+                            ? 'Send Message'
+                            : hasSentInterest
+                            ? 'Interest Sent'
+                            : 'Send Interest',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
                   ),
                 ),
               ),
