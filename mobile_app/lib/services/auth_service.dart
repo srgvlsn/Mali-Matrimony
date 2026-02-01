@@ -7,34 +7,48 @@ class AuthService extends ChangeNotifier {
 
   static final AuthService instance = AuthService._internal();
 
-  UserProfile? get currentUser => MockBackend.instance.currentUser;
-  bool get isLoggedIn => MockBackend.instance.currentUserId != null;
+  bool _isLoggedIn = false;
+  UserProfile? _currentUser;
+
+  UserProfile? get currentUser =>
+      _currentUser ?? BackendService.instance.currentUser;
+  bool get isLoggedIn => _isLoggedIn || currentUser != null;
 
   void refresh() {
     notifyListeners();
   }
 
-  /// Simulates a login attempt using the Mock Backend
+  /// Login attempt using PostgreSQL
   Future<bool> login(String emailOrPhone, String password) async {
-    final response = await MockBackend.instance.login(emailOrPhone, password);
+    final response = await BackendService.instance.login(
+      emailOrPhone,
+      password,
+    );
     if (response.success) {
+      _isLoggedIn = true;
+      _currentUser = response.data;
       notifyListeners();
+      return true;
     }
-    return response.success;
+    return false;
   }
 
-  /// Simulates a registration using the Mock Backend
+  /// Registration using PostgreSQL
   Future<bool> register(RegistrationData data) async {
     final user = data.toUserProfile();
-    final response = await MockBackend.instance.registerUser(user);
+    final response = await BackendService.instance.registerUser(user);
     if (response.success) {
+      _isLoggedIn = true;
+      _currentUser = response.data;
       notifyListeners();
+      return true;
     }
-    return response.success;
+    return false;
   }
 
   Future<void> logout() async {
-    await MockBackend.instance.logout();
+    _isLoggedIn = false;
+    _currentUser = null;
     notifyListeners();
   }
 }

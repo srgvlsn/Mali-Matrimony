@@ -5,7 +5,7 @@ A dedicated and premium matrimonial application designed specifically for the **
 ## 🌟 Key Features
 
 ### 💎 Rich Profile Experience (The "Digital Matrimony Book")
-- **Comprehensive Profiles**: Detailed views including Personal, Career, Family Background, and Community-specific data (Gothra/Kul).
+- **Comprehensive Profiles**: Detailed views including Personal, Career, Family Background, and Community-specific data.
 - **Image Galleries**: High-quality, swipeable image carousels for a premium feel.
 - **Trust Indicators**: Manual profile verification badges to ensure community trust.
 

@@ -27,4 +27,11 @@ flutter run -d chrome
 
 ## 📝 Change Log
 
+### Version 0.5.0 - 2026-02-02 02:08
+**Contributor**: Sreerag Valsan
+> - Transitioned to **Indirect Architecture** using a Python (FastAPI) backend.
+> - Fully integrated with **PostgreSQL** database.
+> - Implemented real data persistence for Profiles, Interests, and Shortlists.
+> - Resolved Admin TODOs for profile deletion and interest management.
+
 See [CHANGELOG.md](CHANGELOG.md) for full history.

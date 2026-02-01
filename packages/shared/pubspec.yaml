@@ -11,3 +11,8 @@ dependencies:
     sdk: flutter
   postgres: ^3.0.2
   flutter_dotenv: ^5.1.0
+  http: ^1.1.0
+
+flutter:
+  assets:
+    - assets/env

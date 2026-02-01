@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared/shared.dart';
+import 'auth_service.dart';
 
 class ProfileService extends ChangeNotifier {
   static final ProfileService instance = ProfileService._internal();
@@ -14,19 +15,27 @@ class ProfileService extends ChangeNotifier {
   Set<String> get shortlistedIds => _shortlistedIds;
   bool get isLoading => _isLoading;
 
-  /// Fetch profiles from the mock backend
+  /// Fetch profiles from PostgreSQL
   Future<void> fetchProfiles() async {
     _isLoading = true;
     notifyListeners();
 
-    final response = await MockBackend.instance.getProfiles();
-    if (response.success && response.data != null) {
-      _profiles = response.data!;
-    }
+    final response = await BackendService.instance.getAllProfiles();
 
-    final shortlistResponse = await MockBackend.instance.getShortlistedIds();
-    if (shortlistResponse.success && shortlistResponse.data != null) {
-      _shortlistedIds = shortlistResponse.data!;
+    if (response.success) {
+      _profiles = response.data ?? [];
+
+      // Load shortlists if user is logged in
+      final currentUser = AuthService.instance.currentUser;
+      if (currentUser != null) {
+        final shortlistResponse = await BackendService.instance.getShortlisted(
+          currentUser.id,
+        );
+        if (shortlistResponse.success) {
+          _shortlistedIds =
+              shortlistResponse.data?.map((p) => p.id).toSet() ?? {};
+        }
+      }
     }
 
     _isLoading = false;
@@ -36,12 +45,18 @@ class ProfileService extends ChangeNotifier {
   bool isShortlisted(String id) => _shortlistedIds.contains(id);
 
   Future<void> toggleShortlist(String id) async {
-    final response = await MockBackend.instance.toggleShortlist(id);
+    final currentUser = AuthService.instance.currentUser;
+    if (currentUser == null) return;
+
+    final response = await BackendService.instance.toggleShortlist(
+      currentUser.id,
+      id,
+    );
     if (response.success) {
-      if (response.data == true) {
-        _shortlistedIds.add(id);
-      } else {
+      if (_shortlistedIds.contains(id)) {
         _shortlistedIds.remove(id);
+      } else {
+        _shortlistedIds.add(id);
       }
       notifyListeners();
     }
@@ -57,23 +72,31 @@ class ProfileService extends ChangeNotifier {
     String? location,
     String? caste,
   }) async {
-    final response = await MockBackend.instance.searchProfiles(
-      minAge: minAge,
-      maxAge: maxAge,
-      location: location,
-      caste: caste,
-    );
-    return response.data ?? [];
+    // For now, filtering locally to keep it simple,
+    // but in a real app this would be a Postgres query
+    return _profiles.where((p) {
+      if (minAge != null && p.age < minAge) return false;
+      if (maxAge != null && p.age > maxAge) return false;
+      if (location != null &&
+          !p.location.toLowerCase().contains(location.toLowerCase())) {
+        return false;
+      }
+      if (caste != null &&
+          !p.caste.toLowerCase().contains(caste.toLowerCase())) {
+        return false;
+      }
+      return true;
+    }).toList();
   }
 
   Future<bool> updateProfile(UserProfile user) async {
-    final response = await MockBackend.instance.updateProfile(user);
+    final response = await BackendService.instance.updateProfile(user);
     if (response.success) {
       final index = _profiles.indexWhere((p) => p.id == user.id);
       if (index != -1) {
         _profiles[index] = user;
-        notifyListeners();
       }
+      notifyListeners();
       return true;
     }
     return false;

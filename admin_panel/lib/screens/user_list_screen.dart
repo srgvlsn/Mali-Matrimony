@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/admin_mock_service.dart';
+import '../services/admin_service.dart';
 import 'package:shared/shared.dart';
 import '../widgets/user_detail_dialog.dart';
 import '../widgets/user_edit_dialog.dart';
@@ -12,11 +12,32 @@ class UserListScreen extends StatefulWidget {
 }
 
 class _UserListScreenState extends State<UserListScreen> {
-  final AdminMockService _service = AdminMockService.instance;
+  List<UserProfile> _users = [];
+  List<UserProfile> _filteredUsers = []; // For search
+  // final TextEditingController _searchController = TextEditingController();
+  // String _selectedFilter = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    final fetchedUsers = await AdminService.instance.getUsers();
+    setState(() {
+      _users = fetchedUsers;
+      _filteredUsers = _users;
+    });
+  }
+
+  // void _refreshData() {
+  //   _loadUsers();
+  // }
 
   @override
   Widget build(BuildContext context) {
-    final users = _service.allUsers;
+    final users = _filteredUsers;
 
     return Padding(
       padding: const EdgeInsets.all(24.0),

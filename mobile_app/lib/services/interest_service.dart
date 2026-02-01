@@ -1,29 +1,40 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared/shared.dart';
+import 'auth_service.dart';
 
 class InterestService extends ChangeNotifier {
   static final InterestService instance = InterestService._internal();
   InterestService._internal();
   factory InterestService() => instance;
 
-  List<InterestModel> _interests = [];
+  final List<InterestModel> _interests = [];
   bool _isLoading = false;
 
-  List<InterestModel> get receivedInterests =>
-      _interests.where((i) => i.receiverId == 'user_456').toList();
+  List<InterestModel> get receivedInterests {
+    final curUser = AuthService.instance.currentUser;
+    if (curUser == null) return [];
+    return _interests.where((i) => i.receiverId == curUser.id).toList();
+  }
 
-  List<InterestModel> get sentInterests =>
-      _interests.where((i) => i.senderId == 'user_456').toList();
+  List<InterestModel> get sentInterests {
+    final curUser = AuthService.instance.currentUser;
+    if (curUser == null) return [];
+    return _interests.where((i) => i.senderId == curUser.id).toList();
+  }
 
   bool get isLoading => _isLoading;
 
   Future<void> fetchInterests() async {
+    final curUser = AuthService.instance.currentUser;
+    if (curUser == null) return;
+
     _isLoading = true;
     notifyListeners();
 
-    final response = await MockBackend.instance.getInterests();
-    if (response.success && response.data != null) {
-      _interests = response.data!;
+    final response = await BackendService.instance.getInterests(curUser.id);
+    if (response.success) {
+      _interests.clear();
+      _interests.addAll(response.data ?? []);
     }
 
     _isLoading = false;
@@ -31,10 +42,15 @@ class InterestService extends ChangeNotifier {
   }
 
   Future<void> sendInterest(String userId) async {
-    final response = await MockBackend.instance.sendInterest(userId);
-    if (response.success && response.data != null) {
-      _interests.add(response.data!);
-      notifyListeners();
+    final curUser = AuthService.instance.currentUser;
+    if (curUser == null) return;
+
+    final response = await BackendService.instance.sendInterest(
+      curUser.id,
+      userId,
+    );
+    if (response.success) {
+      await fetchInterests(); // Refresh list after sending
     }
   }
 
@@ -42,7 +58,7 @@ class InterestService extends ChangeNotifier {
     String interestId,
     InterestStatus newStatus,
   ) async {
-    final response = await MockBackend.instance.updateInterestStatus(
+    final response = await BackendService.instance.updateInterestStatus(
       interestId,
       newStatus,
     );
@@ -56,11 +72,14 @@ class InterestService extends ChangeNotifier {
   }
 
   InterestStatus? getStatusWithUser(String userId) {
+    final curUser = AuthService.instance.currentUser;
+    if (curUser == null) return null;
+
     try {
       final interest = _interests.firstWhere(
         (i) =>
-            (i.senderId == 'user_456' && i.receiverId == userId) ||
-            (i.senderId == userId && i.receiverId == 'user_456'),
+            (i.senderId == curUser.id && i.receiverId == userId) ||
+            (i.senderId == userId && i.receiverId == curUser.id),
       );
       return interest.status;
     } catch (_) {
@@ -69,10 +88,13 @@ class InterestService extends ChangeNotifier {
   }
 
   bool hasInterestWith(String userId) {
+    final curUser = AuthService.instance.currentUser;
+    if (curUser == null) return false;
+
     return _interests.any(
       (i) =>
-          (i.senderId == 'user_456' && i.receiverId == userId) ||
-          (i.senderId == userId && i.receiverId == 'user_456'),
+          (i.senderId == curUser.id && i.receiverId == userId) ||
+          (i.senderId == userId && i.receiverId == curUser.id),
     );
   }
 }

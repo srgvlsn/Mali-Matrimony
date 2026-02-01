@@ -22,8 +22,11 @@ class _RegisterStep3CommunityState extends State<RegisterStep3Community> {
   final subCasteController = TextEditingController();
   final motherTongueController = TextEditingController();
   final languagesController = TextEditingController();
+  final homeTownController = TextEditingController();
+  final siblingsCountController = TextEditingController();
 
   String guardianType = "Father"; // default
+  bool? hasSiblings = false;
 
   @override
   Widget build(BuildContext context) {
@@ -161,6 +164,62 @@ class _RegisterStep3CommunityState extends State<RegisterStep3Community> {
 
                         const SizedBox(height: 16),
 
+                        // Siblings Question
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Do you have siblings?",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            RadioGroup<bool>(
+                              groupValue: hasSiblings,
+                              onChanged: (val) {
+                                setState(() {
+                                  hasSiblings = val;
+                                  if (val == false) {
+                                    siblingsCountController.clear();
+                                  }
+                                });
+                              },
+                              child: Row(
+                                children: [
+                                  const Radio<bool>(value: true),
+                                  const Text("Yes"),
+                                  const SizedBox(width: 20),
+                                  const Radio<bool>(value: false),
+                                  const Text("No"),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        if (hasSiblings == true) ...[
+                          const SizedBox(height: 8),
+                          _textField(
+                            "Number of Siblings",
+                            siblingsCountController,
+                            keyboard: TextInputType.number,
+                            validator: (value) {
+                              if (hasSiblings == true &&
+                                  (value == null || value.isEmpty)) {
+                                return "Please enter number of siblings";
+                              }
+                              if (int.tryParse(value ?? '') == null) {
+                                return "Enter a valid number";
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+
+                        const SizedBox(height: 16),
+
                         _textField(
                           "Caste",
                           casteController,
@@ -207,19 +266,42 @@ class _RegisterStep3CommunityState extends State<RegisterStep3Community> {
                             return null;
                           },
                         ),
+                        const SizedBox(height: 16),
+
+                        _textField(
+                          "Home Town",
+                          homeTownController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter home town";
+                            }
+                            return null;
+                          },
+                        ),
                         const SizedBox(height: 32),
 
                         ElevatedButton(
                           style: AppStyles.primaryButtonStyle,
                           onPressed: () {
                             if (_formKey.currentState!.validate()) {
+                              widget.data.fatherName = fatherController.text;
+                              widget.data.motherName = motherController.text;
                               widget.data.caste = casteController.text;
                               widget.data.subCaste = subCasteController.text;
                               widget.data.motherTongue =
                                   motherTongueController.text;
+                              widget.data.languages = languagesController.text;
+                              widget.data.hometown = homeTownController.text;
 
-                              // Family details can be extended in model later
-                              // widget.data.guardianType = guardianType;
+                              if (hasSiblings == true) {
+                                widget.data.siblings =
+                                    int.tryParse(
+                                      siblingsCountController.text,
+                                    ) ??
+                                    0;
+                              } else {
+                                widget.data.siblings = 0;
+                              }
 
                               Navigator.push(
                                 context,
@@ -247,13 +329,14 @@ class _RegisterStep3CommunityState extends State<RegisterStep3Community> {
   Widget _textField(
     String label,
     TextEditingController controller, {
+    TextInputType keyboard = TextInputType.text,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
+      keyboardType: keyboard,
       decoration: InputDecoration(labelText: label),
       validator: validator,
     );
   }
 }
-

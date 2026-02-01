@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/admin_mock_service.dart';
+import '../services/admin_service.dart';
 import 'package:shared/shared.dart';
 import '../widgets/mock_analytics_chart.dart';
 
@@ -9,7 +9,7 @@ class AdminDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // In a real app, you'd use Provider/State management here
-    final service = AdminMockService.instance;
+    final analytics = AdminService.instance.getAnalyticsData();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
@@ -30,23 +30,23 @@ class AdminDashboardScreen extends StatelessWidget {
               _buildStatCard(
                 context,
                 "Total Users",
-                "${service.totalUsers}",
+                "${analytics['totalUsers']}",
                 Icons.people,
                 Colors.blue,
               ),
               const SizedBox(width: 24),
               _buildStatCard(
                 context,
-                "Pending Requests",
-                "${service.pendingVerifications}",
+                "Active Users", // Changed from Pending for generic analytics
+                "${analytics['activeUsers']}",
                 Icons.pending_actions,
                 Colors.orange,
               ),
               const SizedBox(width: 24),
               _buildStatCard(
                 context,
-                "Verified Users",
-                "${service.verifiedUsers}",
+                "Premium Users", // Changed from Verified for generic analytics
+                "${analytics['premiumUsers']}",
                 Icons.verified,
                 Colors.green,
               ),
@@ -113,4 +113,3 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 }
-

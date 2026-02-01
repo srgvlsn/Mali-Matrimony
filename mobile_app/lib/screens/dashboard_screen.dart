@@ -467,14 +467,6 @@ class _HomeView extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      QuickActionCard(
-                        icon: Icons.verified_user_rounded,
-                        label: "Safe Matrimony",
-                        onTap: () {
-                          // Action for safe matrimony
-                        },
-                      ),
                     ],
                   ),
                 ),

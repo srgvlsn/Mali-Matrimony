@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
-import 'services/admin_mock_service.dart';
 import 'package:shared/shared.dart';
 
-void main() {
-  // Initialize Mock Service
-  AdminMockService.instance.init();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize API Backend
+  await ApiService.instance.initApi();
 
   runApp(const MaliAdminApp());
 }

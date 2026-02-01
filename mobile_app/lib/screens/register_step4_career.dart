@@ -18,6 +18,7 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
   final _formKey = GlobalKey<FormState>();
   final educationController = TextEditingController();
   final professionController = TextEditingController();
+  final companyController = TextEditingController();
   final incomeController = TextEditingController();
   final cityController = TextEditingController();
 
@@ -106,6 +107,18 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
                         const SizedBox(height: 16),
 
                         _textField(
+                          "Company Name",
+                          companyController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter company name";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        _textField(
                           "Annual Income",
                           incomeController,
                           keyboard: TextInputType.number,
@@ -173,6 +186,7 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
                               widget.data.education = educationController.text;
                               widget.data.profession =
                                   professionController.text;
+                              widget.data.company = companyController.text;
                               widget.data.annualIncome = incomeController.text;
                               widget.data.workingCity = cityController.text;
                               widget.data.workMode = workMode;
@@ -198,6 +212,7 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
                             // Save current state regardless of validation for drafts
                             widget.data.education = educationController.text;
                             widget.data.profession = professionController.text;
+                            widget.data.company = companyController.text;
                             widget.data.annualIncome = incomeController.text;
                             widget.data.workingCity = cityController.text;
                             widget.data.workMode = workMode;
@@ -254,4 +269,3 @@ class _RegisterStep4CareerState extends State<RegisterStep4Career> {
     );
   }
 }
-

@@ -17,11 +17,18 @@ class RegistrationData {
   String? caste;
   String? subCaste;
   String? motherTongue;
+  String? languages; // Comma-separated string from UI
+  int? siblings;
+
+  String? fatherName;
+  String? motherName;
 
   String? education;
   String? profession;
+  String? company;
   String? annualIncome;
   String? workingCity;
+  String? hometown;
   String? workMode;
 
   String? aboutMe;
@@ -46,10 +53,16 @@ class RegistrationData {
       'caste': caste,
       'subCaste': subCaste,
       'motherTongue': motherTongue,
+      'languages': languages,
+      'siblings': siblings,
+      'fatherName': fatherName,
+      'motherName': motherName,
       'education': education,
       'profession': profession,
+      'company': company,
       'annualIncome': annualIncome,
       'workingCity': workingCity,
+      'hometown': hometown,
       'workMode': workMode,
       'aboutMe': aboutMe,
       'partnerPreferences': partnerPreferences,
@@ -73,10 +86,16 @@ class RegistrationData {
       ..caste = map['caste']
       ..subCaste = map['subCaste']
       ..motherTongue = map['motherTongue']
+      ..languages = map['languages']
+      ..siblings = map['siblings']
+      ..fatherName = map['fatherName']
+      ..motherName = map['motherName']
       ..education = map['education']
       ..profession = map['profession']
+      ..company = map['company']
       ..annualIncome = map['annualIncome']
       ..workingCity = map['workingCity']
+      ..hometown = map['hometown']
       ..workMode = map['workMode']
       ..aboutMe = map['aboutMe']
       ..partnerPreferences = map['partnerPreferences']
@@ -94,6 +113,15 @@ class RegistrationData {
       RegistrationData.fromMap(jsonDecode(json));
 
   UserProfile toUserProfile() {
+    List<String> parsedLanguages = [];
+    if (languages != null && languages!.isNotEmpty) {
+      parsedLanguages = languages!
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+
     return UserProfile(
       id: 'user_${DateTime.now().millisecondsSinceEpoch}',
       name: fullName ?? 'Anonymous',
@@ -107,19 +135,17 @@ class RegistrationData {
       caste: caste ?? 'Mali',
       subCaste: subCaste ?? 'Lingayat Mali',
       motherTongue: motherTongue ?? 'Marathi',
-      gothra: 'N/A',
-      kul: 'N/A',
-      manglikStatus: ManglikStatus.dontKnow,
+      languages: parsedLanguages,
       education: education ?? 'N/A',
       occupation: profession ?? 'N/A',
-      company: 'N/A',
+      company: company ?? 'N/A',
       income: annualIncome ?? 'N/A',
       location: workingCity ?? 'N/A',
-      fatherName: 'N/A',
-      fatherOccupation: 'N/A',
-      motherName: 'N/A',
-      motherOccupation: 'N/A',
-      siblings: 0,
+      hometown: hometown,
+      workMode: workMode,
+      fatherName: fatherName ?? 'N/A',
+      motherName: motherName ?? 'N/A',
+      siblings: siblings ?? 0,
       photos: profileImagePath != null ? [profileImagePath!] : [],
       bio: aboutMe ?? '',
       partnerPreferences: partnerPreferences ?? '',

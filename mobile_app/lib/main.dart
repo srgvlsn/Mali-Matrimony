@@ -11,6 +11,9 @@ import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize API Backend
+  await ApiService.instance.initApi();
+
   final profileService = ProfileService();
   final interestService = InterestService();
 

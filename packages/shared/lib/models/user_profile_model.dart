@@ -17,8 +17,6 @@ extension MaritalStatusExtension on MaritalStatus {
   }
 }
 
-enum ManglikStatus { manglik, nonManglik, anshik, dontKnow }
-
 class UserProfile {
   final String id;
   final String name;
@@ -28,29 +26,26 @@ class UserProfile {
   final double height; // in feet or cm
   final Gender gender;
   final MaritalStatus maritalStatus;
-  final String religion;
-  final String caste;
-  final String subCaste;
-  final String motherTongue;
-
-  // Community / Religious
-  final String gothra;
-  final String kul;
-  final ManglikStatus manglikStatus;
-
   // Education & Career
   final String education;
   final String occupation;
   final String company;
   final String income; // Represented as range
   final String location; // City, State
+  final String? hometown;
+  final String? workMode;
 
   // Family
   final String fatherName;
-  final String fatherOccupation;
   final String motherName;
-  final String motherOccupation;
   final int siblings;
+
+  // Community
+  final String religion;
+  final String caste;
+  final String subCaste;
+  final String motherTongue;
+  final List<String> languages;
 
   // Media
   final List<String> photos;
@@ -81,18 +76,16 @@ class UserProfile {
     required this.caste,
     required this.subCaste,
     required this.motherTongue,
-    required this.gothra,
-    required this.kul,
-    required this.manglikStatus,
+    required this.languages,
     required this.education,
     required this.occupation,
     required this.company,
     required this.income,
     required this.location,
+    this.hometown,
+    this.workMode,
     required this.fatherName,
-    required this.fatherOccupation,
     required this.motherName,
-    required this.motherOccupation,
     required this.siblings,
     required this.photos,
     required this.bio,
@@ -118,18 +111,16 @@ class UserProfile {
     String? caste,
     String? subCaste,
     String? motherTongue,
-    String? gothra,
-    String? kul,
-    ManglikStatus? manglikStatus,
+    List<String>? languages,
     String? education,
     String? occupation,
     String? company,
     String? income,
     String? location,
+    String? hometown,
+    String? workMode,
     String? fatherName,
-    String? fatherOccupation,
     String? motherName,
-    String? motherOccupation,
     int? siblings,
     List<String>? photos,
     String? bio,
@@ -155,18 +146,16 @@ class UserProfile {
       caste: caste ?? this.caste,
       subCaste: subCaste ?? this.subCaste,
       motherTongue: motherTongue ?? this.motherTongue,
-      gothra: gothra ?? this.gothra,
-      kul: kul ?? this.kul,
-      manglikStatus: manglikStatus ?? this.manglikStatus,
+      languages: languages ?? this.languages,
       education: education ?? this.education,
       occupation: occupation ?? this.occupation,
       company: company ?? this.company,
       income: income ?? this.income,
       location: location ?? this.location,
+      hometown: hometown ?? this.hometown,
+      workMode: workMode ?? this.workMode,
       fatherName: fatherName ?? this.fatherName,
-      fatherOccupation: fatherOccupation ?? this.fatherOccupation,
       motherName: motherName ?? this.motherName,
-      motherOccupation: motherOccupation ?? this.motherOccupation,
       siblings: siblings ?? this.siblings,
       photos: photos ?? this.photos,
       bio: bio ?? this.bio,
@@ -190,10 +179,10 @@ class UserProfile {
       company,
       income,
       location,
+      hometown,
+      workMode,
       fatherName,
-      fatherOccupation,
       motherName,
-      motherOccupation,
       bio,
       partnerPreferences,
       rashi,
@@ -207,11 +196,12 @@ class UserProfile {
         .length;
 
     filledCount += 4; // age, height, siblings, gender (enums/nums)
+    if (languages.isNotEmpty) filledCount++;
 
     if (photos.isNotEmpty) filledCount++;
     if (email != null && email!.isNotEmpty) filledCount++;
 
-    return (filledCount / 22).clamp(0.0, 1.0);
+    return (filledCount / 24).clamp(0.0, 1.0);
   }
 
   /// Convert UserProfile to Map for database insertion
@@ -224,34 +214,32 @@ class UserProfile {
       'age': age,
       'height': height,
       'gender': gender.name,
-      'maritalStatus': maritalStatus.name,
+      'marital_status': maritalStatus.name,
       'religion': religion,
       'caste': caste,
-      'subCaste': subCaste,
-      'motherTongue': motherTongue,
-      'gothra': gothra,
-      'kul': kul,
-      'manglikStatus': manglikStatus.name,
+      'sub_caste': subCaste,
+      'mother_tongue': motherTongue,
+      'languages': languages,
       'education': education,
       'occupation': occupation,
       'company': company,
       'income': income,
       'location': location,
-      'fatherName': fatherName,
-      'fatherOccupation': fatherOccupation,
-      'motherName': motherName,
-      'motherOccupation': motherOccupation,
+      'hometown': hometown,
+      'work_mode': workMode,
+      'father_name': fatherName,
+      'mother_name': motherName,
       'siblings': siblings,
       'photos': photos,
       'bio': bio,
-      'partnerPreferences': partnerPreferences,
-      'horoscopeImageUrl': horoscopeImageUrl,
+      'partner_preferences': partnerPreferences,
+      'horoscope_image_url': horoscopeImageUrl,
       'rashi': rashi,
       'nakshatra': nakshatra,
-      'birthTime': birthTime,
-      'birthPlace': birthPlace,
-      'isVerified': isVerified,
-      'isPremium': isPremium,
+      'birth_time': birthTime,
+      'birth_place': birthPlace,
+      'is_verified': isVerified,
+      'is_premium': isPremium,
     };
   }
 
@@ -272,20 +260,16 @@ class UserProfile {
       caste: map['caste'] as String,
       subCaste: map['sub_caste'] as String,
       motherTongue: map['mother_tongue'] as String,
-      gothra: map['gothra'] as String,
-      kul: map['kul'] as String,
-      manglikStatus: ManglikStatus.values.firstWhere(
-        (e) => e.name == map['manglik_status'],
-      ),
+      languages: (map['languages'] as List<dynamic>?)?.cast<String>() ?? [],
       education: map['education'] as String,
       occupation: map['occupation'] as String,
       company: map['company'] as String,
       income: map['income'] as String,
       location: map['location'] as String,
+      hometown: map['hometown'] as String?,
+      workMode: map['work_mode'] as String?,
       fatherName: map['father_name'] as String,
-      fatherOccupation: map['father_occupation'] as String,
       motherName: map['mother_name'] as String,
-      motherOccupation: map['mother_occupation'] as String,
       siblings: map['siblings'] as int,
       photos: (map['photos'] as List<dynamic>?)?.cast<String>() ?? [],
       bio: map['bio'] as String,

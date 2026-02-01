@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
-import '../services/admin_mock_service.dart';
+import '../services/admin_service.dart';
 
 class UserEditDialog extends StatefulWidget {
   final UserProfile user;
@@ -33,6 +33,18 @@ class _UserEditDialogState extends State<UserEditDialog> {
   late TextEditingController _bioController;
   late TextEditingController _partnerPreferencesController;
 
+  late TextEditingController _fatherNameController;
+  late TextEditingController _motherNameController;
+  late TextEditingController _siblingsController;
+
+  late TextEditingController _casteController;
+  late TextEditingController _subCasteController;
+  late TextEditingController _motherTongueController;
+  late TextEditingController _languagesController;
+
+  late TextEditingController _hometownController;
+  late TextEditingController _workModeController;
+
   late Gender _selectedGender;
   late MaritalStatus _selectedMaritalStatus;
   late bool _isVerified;
@@ -57,6 +69,28 @@ class _UserEditDialogState extends State<UserEditDialog> {
       text: widget.user.partnerPreferences,
     );
 
+    _fatherNameController = TextEditingController(text: widget.user.fatherName);
+    _motherNameController = TextEditingController(text: widget.user.motherName);
+    _siblingsController = TextEditingController(
+      text: widget.user.siblings.toString(),
+    );
+
+    _casteController = TextEditingController(text: widget.user.caste);
+    _subCasteController = TextEditingController(text: widget.user.subCaste);
+    _motherTongueController = TextEditingController(
+      text: widget.user.motherTongue,
+    );
+    _languagesController = TextEditingController(
+      text: widget.user.languages.join(', '),
+    );
+
+    _hometownController = TextEditingController(
+      text: widget.user.hometown ?? '',
+    );
+    _workModeController = TextEditingController(
+      text: widget.user.workMode ?? '',
+    );
+
     _selectedGender = widget.user.gender;
     _selectedMaritalStatus = widget.user.maritalStatus;
     _isVerified = widget.user.isVerified;
@@ -76,6 +110,18 @@ class _UserEditDialogState extends State<UserEditDialog> {
     _locationController.dispose();
     _bioController.dispose();
     _partnerPreferencesController.dispose();
+
+    _fatherNameController.dispose();
+    _motherNameController.dispose();
+    _siblingsController.dispose();
+    _casteController.dispose();
+    _subCasteController.dispose();
+    _motherTongueController.dispose();
+    _languagesController.dispose();
+
+    _hometownController.dispose();
+    _workModeController.dispose();
+
     super.dispose();
   }
 
@@ -83,23 +129,40 @@ class _UserEditDialogState extends State<UserEditDialog> {
     if (_formKey.currentState!.validate()) {
       final updatedUser = widget.user.copyWith(
         name: _nameController.text,
-        phone: _phoneController.text.isEmpty ? null : _phoneController.text,
-        email: _emailController.text.isEmpty ? null : _emailController.text,
-        age: int.parse(_ageController.text),
-        height: double.parse(_heightController.text),
+        phone: _phoneController.text,
+        email: _emailController.text,
+        age: int.tryParse(_ageController.text) ?? 25,
+        height: double.tryParse(_heightController.text) ?? 5.5,
         gender: _selectedGender,
         maritalStatus: _selectedMaritalStatus,
+        caste: _casteController.text,
+        subCaste: _subCasteController.text,
+        motherTongue: _motherTongueController.text,
         education: _educationController.text,
         occupation: _occupationController.text,
         company: _companyController.text,
         income: _incomeController.text,
         location: _locationController.text,
+        fatherName: _fatherNameController.text,
+        motherName: _motherNameController.text,
+        siblings: int.tryParse(_siblingsController.text) ?? 0,
         bio: _bioController.text,
         partnerPreferences: _partnerPreferencesController.text,
         isVerified: _isVerified,
+        languages: _languagesController.text
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList(),
+        hometown: _hometownController.text.isEmpty
+            ? null
+            : _hometownController.text,
+        workMode: _workModeController.text.isEmpty
+            ? null
+            : _workModeController.text,
       );
 
-      AdminMockService.instance.updateUser(updatedUser);
+      AdminService.instance.updateUser(updatedUser);
       Navigator.pop(context, true);
     }
   }
@@ -219,6 +282,61 @@ class _UserEditDialogState extends State<UserEditDialog> {
                         keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 24),
+
+                      // Family & Community Details (Step 3 Order)
+                      _buildSectionTitle("Family & Community Details"),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              "Father's Name",
+                              _fatherNameController,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTextField(
+                              "Mother's Name",
+                              _motherNameController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField(
+                        "Siblings",
+                        _siblingsController,
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField("Caste", _casteController),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTextField(
+                              "Sub-Caste",
+                              _subCasteController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField("Mother Tongue", _motherTongueController),
+                      const SizedBox(height: 12),
+                      _buildTextField(
+                        "Languages (Comma separated)",
+                        _languagesController,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField("Home Town", _hometownController),
+
+                      const SizedBox(height: 24),
+
+                      // Education & Career (Step 4 Order)
                       _buildSectionTitle("Education & Career"),
                       const SizedBox(height: 16),
                       _buildTextField("Education", _educationController),
@@ -240,7 +358,13 @@ class _UserEditDialogState extends State<UserEditDialog> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      _buildTextField("Location", _locationController),
+                      _buildTextField(
+                        "Working City (Location)",
+                        _locationController,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTextField("Work Mode", _workModeController),
+
                       const SizedBox(height: 24),
                       _buildSectionTitle("Bio & Preferences"),
                       const SizedBox(height: 16),

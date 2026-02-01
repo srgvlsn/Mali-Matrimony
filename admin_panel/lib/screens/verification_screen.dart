@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/admin_mock_service.dart';
+import '../services/admin_service.dart';
 import 'package:shared/shared.dart';
 
 class VerificationScreen extends StatefulWidget {
@@ -10,12 +10,24 @@ class VerificationScreen extends StatefulWidget {
 }
 
 class _VerificationScreenState extends State<VerificationScreen> {
-  // Access mock service
-  final AdminMockService _service = AdminMockService.instance;
+  List<UserProfile> _pendingUsers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final fetchedUsers = await AdminService.instance.getPendingUsers();
+    setState(() {
+      _pendingUsers = fetchedUsers;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (_service.pendingUsers.isEmpty) {
+    if (_pendingUsers.isEmpty) {
       return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -47,10 +59,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
           const SizedBox(height: 24),
           Expanded(
             child: ListView.separated(
-              itemCount: _service.pendingUsers.length,
+              itemCount: _pendingUsers.length,
               separatorBuilder: (ctx, i) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
-                final user = _service.pendingUsers[index];
+                final user = _pendingUsers[index];
                 return Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -107,10 +119,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       Row(
                         children: [
                           OutlinedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _service.rejectUser(user.id);
-                              });
+                            onPressed: () async {
+                              AdminService.instance.rejectUser(user.id);
+                              await _loadData();
                             },
                             icon: const Icon(Icons.close, color: Colors.red),
                             label: const Text(
@@ -126,10 +137,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _service.verifyUser(user.id);
-                              });
+                            onPressed: () async {
+                              await AdminService.instance.verifyUser(user.id);
+                              await _loadData();
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text("${user.name} Verified"),
@@ -161,4 +172,3 @@ class _VerificationScreenState extends State<VerificationScreen> {
     );
   }
 }
-

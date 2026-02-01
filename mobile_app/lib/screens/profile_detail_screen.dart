@@ -212,6 +212,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           'value': profile.income,
           'icon': Icons.currency_rupee,
         },
+        if (profile.workMode != null && profile.workMode!.isNotEmpty)
+          {
+            'label': 'Work Mode',
+            'value': profile.workMode!,
+            'icon': Icons.laptop,
+          },
       ],
     );
   }
@@ -219,14 +225,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   Widget _buildFamilySection() {
     return DetailListCard(
       items: [
-        {
-          'label': 'Father',
-          'value': '${profile.fatherName} (${profile.fatherOccupation})',
-          'icon': Icons.person,
-        },
+        {'label': 'Father', 'value': profile.fatherName, 'icon': Icons.person},
         {
           'label': 'Mother',
-          'value': '${profile.motherName} (${profile.motherOccupation})',
+          'value': profile.motherName,
           'icon': Icons.person_outline,
         },
         {
@@ -246,13 +248,19 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           'value': '${profile.caste} (${profile.subCaste})',
           'icon': Icons.people,
         },
-        {'label': 'Gothra', 'value': profile.gothra, 'icon': Icons.history},
-        {'label': 'Kul', 'value': profile.kul, 'icon': Icons.temple_hindu},
         {
-          'label': 'Manglik',
-          'value': profile.manglikStatus.name.toUpperCase(),
-          'icon': Icons.star_border,
+          'label': 'Mother Tongue',
+          'value': profile.motherTongue,
+          'icon': Icons.language,
         },
+        if (profile.languages.isNotEmpty)
+          {
+            'label': 'Languages',
+            'value': profile.languages.join(', '),
+            'icon': Icons.translate,
+          },
+        if (profile.hometown != null && profile.hometown!.isNotEmpty)
+          {'label': 'Hometown', 'value': profile.hometown!, 'icon': Icons.home},
       ],
     );
   }

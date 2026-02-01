@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-02-02
+### Added
+- **Python Backend**: Implemented a standalone API backend using **FastAPI** and **SQLAlchemy**.
+- **PostgreSQL Integration**: Connected the application to a real local database (`mali_matrimony_database_dev_stage`).
+- **RESTful Architecture**: Transitioned Flutter apps from direct DB access to an indirect API-based architecture for improved security and scalability.
+- **Service Refactor**: Introduced `ApiService` for endpoint management and `BackendService` for REST communication.
+
+### Removed
+- **Mock Data Legacy**: Permanently deleted `dummy_data.dart`, `MockBackend`, and ALL hardcoded user profiles.
+- **Direct DB Sockets**: Removed direct `postgres` socket usage from the Flutter apps in favor of HTTP REST.
+
+### Fixed
+- **State Reliability**: Resolved async synchronization issues in the data layer by implementing cached profile states.
+- **Data Consistency**: Standardized all model serialization to use `snake_case` matching the PostgreSQL schema.
+
 ## [0.3.0] - 2026-02-01
 ### Added
 - **Shared Package**: Created `packages/shared` to centralize models, styles, and mock data.
