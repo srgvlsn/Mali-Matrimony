@@ -2,7 +2,7 @@
 **/build/
 **/.dart_tool/
 **/.packages
-**/pubspec.lock
+# **/pubspec.lock
 **/.flutter-plugins
 **/.flutter-plugins-dependencies
 
