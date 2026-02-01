@@ -169,7 +169,7 @@ class _UserEditDialogState extends State<UserEditDialog> {
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<Gender>(
-                              value: _selectedGender,
+                              initialValue: _selectedGender,
                               decoration: const InputDecoration(
                                 labelText: "Gender",
                               ),
@@ -180,15 +180,16 @@ class _UserEditDialogState extends State<UserEditDialog> {
                                 );
                               }).toList(),
                               onChanged: (val) {
-                                if (val != null)
+                                if (val != null) {
                                   setState(() => _selectedGender = val);
+                                }
                               },
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: DropdownButtonFormField<MaritalStatus>(
-                              value: _selectedMaritalStatus,
+                              initialValue: _selectedMaritalStatus,
                               decoration: const InputDecoration(
                                 labelText: "Marital Status",
                               ),
@@ -199,8 +200,9 @@ class _UserEditDialogState extends State<UserEditDialog> {
                                 );
                               }).toList(),
                               onChanged: (val) {
-                                if (val != null)
+                                if (val != null) {
                                   setState(() => _selectedMaritalStatus = val);
+                                }
                               },
                             ),
                           ),
@@ -256,7 +258,7 @@ class _UserEditDialogState extends State<UserEditDialog> {
                         title: const Text("Verified User"),
                         value: _isVerified,
                         onChanged: (val) => setState(() => _isVerified = val),
-                        activeColor: AppStyles.primary,
+                        activeThumbColor: AppStyles.primary,
                       ),
                     ],
                   ),
