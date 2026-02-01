@@ -1,8 +1,11 @@
-gradle-wrapper.jar
+# Gradle wrapper and scripts
+!gradle-wrapper.jar
+!gradlew
+!gradlew.bat
+
+# Standard ignores
 /.gradle
 /captures/
-/gradlew
-/gradlew.bat
 /local.properties
 GeneratedPluginRegistrant.java
 .cxx/
