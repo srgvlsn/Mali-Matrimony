@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import 'user_edit_dialog.dart';
+import 'dart:convert';
 
-class UserDetailDialog extends StatelessWidget {
+class UserDetailDialog extends StatefulWidget {
   final UserProfile user;
 
   const UserDetailDialog({super.key, required this.user});
@@ -13,6 +14,13 @@ class UserDetailDialog extends StatelessWidget {
       builder: (context) => UserDetailDialog(user: user),
     );
   }
+
+  @override
+  State<UserDetailDialog> createState() => _UserDetailDialogState();
+}
+
+class _UserDetailDialogState extends State<UserDetailDialog> {
+  bool _showRawData = false;
 
   @override
   Widget build(BuildContext context) {
@@ -48,12 +56,14 @@ class UserDetailDialog extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundImage: user.photos.isNotEmpty
+                    backgroundImage: widget.user.photos.isNotEmpty
                         ? NetworkImage(
-                            ApiService.instance.resolveUrl(user.photos[0]),
+                            ApiService.instance.resolveUrl(
+                              widget.user.photos[0],
+                            ),
                           )
                         : null,
-                    child: user.photos.isEmpty
+                    child: widget.user.photos.isEmpty
                         ? const Icon(Icons.person, size: 60)
                         : null,
                   ),
@@ -63,14 +73,14 @@ class UserDetailDialog extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user.name,
+                          widget.user.name,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          "${user.age} yrs • ${user.gender.name.toUpperCase()}",
+                          "${widget.user.age} yrs • ${widget.user.gender.name.toUpperCase()}",
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 16,
@@ -78,11 +88,11 @@ class UserDetailDialog extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         _buildBadge(
-                          user.isVerified ? "VERIFIED" : "PENDING",
-                          user.isVerified ? Colors.green : Colors.orange,
+                          widget.user.isVerified ? "VERIFIED" : "PENDING",
+                          widget.user.isVerified ? Colors.green : Colors.orange,
                         ),
                         const SizedBox(height: 8),
-                        if (user.isPremium)
+                        if (widget.user.isPremium)
                           _buildBadge("PREMIUM", Colors.purple),
                       ],
                     ),
@@ -90,27 +100,74 @@ class UserDetailDialog extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 32),
-              _buildInfoSection("Bio", user.bio),
+              _buildInfoSection("Bio", widget.user.bio),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _buildInfoSection("Location", user.location)),
                   Expanded(
-                    child: _buildInfoSection("Occupation", user.occupation),
+                    child: _buildInfoSection("Location", widget.user.location),
+                  ),
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Occupation",
+                      widget.user.occupation,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _buildInfoSection("Caste", user.caste)),
-                  Expanded(child: _buildInfoSection("Income", user.income)),
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Caste",
+                      widget.user.caste ?? "Mali",
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildInfoSection("Income", widget.user.income),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
               _buildInfoSection(
                 "Registration Date",
-                DateFormatter.formatLongDate(user.createdAt),
+                DateFormatter.formatLongDate(widget.user.createdAt),
+              ),
+              const SizedBox(height: 24),
+              // Raw Data Section
+              ExpansionTile(
+                title: const Text(
+                  "Raw Data (JSON)",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppStyles.primary,
+                  ),
+                ),
+                initiallyExpanded: _showRawData,
+                onExpansionChanged: (expanded) {
+                  setState(() => _showRawData = expanded);
+                },
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: SelectableText(
+                      const JsonEncoder.withIndent(
+                        '  ',
+                      ).convert(widget.user.toMap()),
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const Divider(height: 48),
               Row(
@@ -124,7 +181,10 @@ class UserDetailDialog extends StatelessWidget {
                   ElevatedButton.icon(
                     onPressed: () async {
                       Navigator.pop(context);
-                      final result = await UserEditDialog.show(context, user);
+                      final result = await UserEditDialog.show(
+                        context,
+                        widget.user,
+                      );
                       if (result == true) {
                         // Dialog was closed, changes were saved
                       }

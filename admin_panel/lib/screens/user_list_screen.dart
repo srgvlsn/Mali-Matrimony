@@ -25,6 +25,7 @@ class _UserListScreenState extends State<UserListScreen> {
 
   Future<void> _loadUsers() async {
     final fetchedUsers = await AdminService.instance.getUsers();
+    if (!mounted) return;
     setState(() {
       _users = fetchedUsers;
       _filteredUsers = _users;
@@ -169,7 +170,7 @@ class _UserListScreenState extends State<UserListScreen> {
                           ),
                         ),
                         DataCell(Text("${user.age} / ${user.gender.name}")),
-                        DataCell(Text(user.caste)),
+                        DataCell(Text(user.caste ?? "Mali")),
                         DataCell(
                           Container(
                             padding: const EdgeInsets.symmetric(

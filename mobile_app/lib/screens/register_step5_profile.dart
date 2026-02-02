@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_mali_matrimony/utils/registration_draft.dart';
+import '../utils/registration_draft.dart';
 import '../services/auth_service.dart';
 import '../models/registration_data.dart';
 import '../utils/auto_save.dart';
@@ -57,10 +57,31 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
   }
 
   Future<void> _pickAdditionalImages() async {
+    if (_additionalImages.length >= 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("You can only add up to 3 additional photos"),
+        ),
+      );
+      return;
+    }
+
     final List<XFile> images = await _picker.pickMultiImage();
     if (images.isNotEmpty) {
       setState(() {
-        _additionalImages.addAll(images.map((x) => File(x.path)));
+        final remainingSlots = 3 - _additionalImages.length;
+        if (images.length > remainingSlots) {
+          _additionalImages.addAll(
+            images.take(remainingSlots).map((x) => File(x.path)),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Only the first 3 additional photos were added"),
+            ),
+          );
+        } else {
+          _additionalImages.addAll(images.map((x) => File(x.path)));
+        }
       });
     }
   }
@@ -190,7 +211,7 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                                 // Icon color handled by style
                               ),
                               label: const Text(
-                                "Add Additional Photos (Optional)",
+                                "Add Additional Photos (Max 3)",
                                 // Text color handled by style
                               ),
                               style: AppStyles.outlinedButtonStyle,

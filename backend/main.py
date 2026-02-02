@@ -11,6 +11,31 @@ import uuid
 from . import models, schemas, database
 from .database import engine, get_db
 
+from passlib.context import CryptContext
+from pydantic import BaseModel
+
+# Password hashing configuration
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+# OTP Models (since simple, defining here or move to schemas)
+class OTPRequest(BaseModel):
+    phone: str
+
+class OTPVerify(BaseModel):
+    phone: str
+    otp: str
+
+# In-memory OTP store (for demo purposes)
+otp_store = {}
+
+# ... existing code ...
+
 # Create directories
 os.makedirs("backend/uploads", exist_ok=True)
 
@@ -35,6 +60,48 @@ app.add_middleware(
 def read_root():
     return {"message": "Welcome to Mali Matrimony API"}
 
+# ==================== User Auth API ====================
+
+@app.post("/auth/request-otp", response_model=schemas.ApiResponse)
+def request_otp(request: OTPRequest, db: Session = Depends(get_db)):
+    # Check if user exists
+    user = db.query(models.User).filter(models.User.phone == request.phone).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Phone number not registered")
+        
+    # Generate mock OTP (always 123456 or random for logs)
+    otp = "123456"
+    otp_store[request.phone] = otp
+    print(f"OTP for {request.phone}: {otp}") # Log OTP for testing
+    
+    return schemas.ApiResponse(
+        status="success",
+        message="OTP sent successfully (Check console/logs for '123456')",
+        data={"otp_sent": True} # In real app, don't send OTP back
+    )
+
+@app.post("/auth/verify-otp", response_model=schemas.ApiResponse)
+def verify_otp_login(request: OTPVerify, db: Session = Depends(get_db)):
+    # Verify OTP
+    stored_otp = otp_store.get(request.phone)
+    if not stored_otp or stored_otp != request.otp:
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+    
+    # Clear OTP
+    otp_store.pop(request.phone, None)
+    
+    # Login user
+    user = db.query(models.User).filter(models.User.phone == request.phone).first()
+    if not user:
+         raise HTTPException(status_code=404, detail="User not found")
+         
+    return schemas.ApiResponse(
+        status="success",
+        message="OTP Login successful",
+        data=schemas.UserResponse.model_validate(user).model_dump()
+    )
+
+
 @app.post("/upload", response_model=schemas.ApiResponse)
 async def upload_file(file: UploadFile = File(...)):
     # Generate unique filename
@@ -56,7 +123,24 @@ async def upload_file(file: UploadFile = File(...)):
         data={"url": file_url}
     )
 
-# ==================== Auth API ====================
+# ==================== Admin Auth API ====================
+
+@app.post("/admin/login", response_model=schemas.ApiResponse)
+def admin_login(creds: schemas.AdminLogin, db: Session = Depends(get_db)):
+    admin = db.query(models.Admin).filter(models.Admin.username == creds.username).first()
+    if not admin:
+        raise HTTPException(status_code=401, detail="Invalid admin credentials")
+    
+    if not verify_password(creds.password, admin.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid admin credentials")
+    
+    return schemas.ApiResponse(
+        status="success",
+        message="Admin login successful",
+        data=schemas.AdminResponse.model_validate(admin).model_dump()
+    )
+
+# ==================== User Auth API ====================
 
 @app.post("/auth/register", response_model=schemas.ApiResponse)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -65,7 +149,12 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="User already registered")
     
     try:
-        new_user = models.User(**user.model_dump())
+        user_dict = user.model_dump()
+        password = user_dict.pop('password', None)
+        if password:
+            user_dict['password_hash'] = get_password_hash(password)
+        
+        new_user = models.User(**user_dict)
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
@@ -88,15 +177,58 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.post("/auth/login", response_model=schemas.ApiResponse)
-def login_user(phone: str, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.phone == phone).first()
+def login_user(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.phone == login_data.phone).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # If user has a password, verify it
+    if user.password_hash:
+        if not verify_password(login_data.password, user.password_hash):
+            raise HTTPException(status_code=401, detail="Invalid password")
     
     return schemas.ApiResponse(
         status="success",
         message="Login successful",
         data=schemas.UserResponse.model_validate(user).model_dump()
+    )
+
+# ==================== Analytics API ====================
+
+@app.get("/analytics", response_model=schemas.AnalyticsResponse)
+def get_analytics(db: Session = Depends(get_db)):
+    from datetime import datetime, timedelta
+    
+    # Total users
+    total_users = db.query(models.User).count()
+    
+    # Verified users
+    verified_users = db.query(models.User).filter(models.User.is_verified == True).count()
+    
+    # Premium users
+    premium_users = db.query(models.User).filter(models.User.is_premium == True).count()
+    
+    # Pending verification (not verified)
+    pending_verification = db.query(models.User).filter(models.User.is_verified == False).count()
+    
+    # Recent registrations (last 7 days)
+    seven_days_ago = datetime.now() - timedelta(days=7)
+    recent_registrations = db.query(models.User).filter(
+        models.User.created_at >= seven_days_ago
+    ).count()
+    
+    # Gender distribution
+    male_users = db.query(models.User).filter(models.User.gender == 'male').count()
+    female_users = db.query(models.User).filter(models.User.gender == 'female').count()
+    
+    return schemas.AnalyticsResponse(
+        total_users=total_users,
+        verified_users=verified_users,
+        premium_users=premium_users,
+        pending_verification=pending_verification,
+        recent_registrations=recent_registrations,
+        male_users=male_users,
+        female_users=female_users
     )
 
 # ==================== Profile API ====================

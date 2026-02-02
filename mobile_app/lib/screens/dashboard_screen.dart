@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
-import '../models/notification_model.dart';
 import 'profile_detail_screen.dart';
 import 'matches_screen.dart';
 import 'chat_list_screen.dart';

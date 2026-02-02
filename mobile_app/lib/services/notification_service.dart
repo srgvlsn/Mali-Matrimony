@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../models/notification_model.dart';
+import 'package:shared/shared.dart';
 
 class NotificationService extends ChangeNotifier {
   final List<NotificationModel> _notifications = [];
 
   NotificationService() {
-    _initializeMockNotifications();
+    _initializeDemoNotifications();
   }
 
   List<NotificationModel> get notifications =>
@@ -14,8 +14,8 @@ class NotificationService extends ChangeNotifier {
   int get unreadCount =>
       _notifications.where((notification) => !notification.isRead).length;
 
-  void _initializeMockNotifications() {
-    // Add some mock notifications for demonstration
+  void _initializeDemoNotifications() {
+    // Demo notifications for UI demonstration (replace with backend integration)
     _notifications.addAll([
       NotificationModel(
         id: '1',

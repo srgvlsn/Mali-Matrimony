@@ -199,7 +199,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
                         const SizedBox(height: 16),
                         Row(
                           children: [
-                            _buildChip(profile.caste),
+                            _buildChip(profile.caste ?? "Mali"),
                             const SizedBox(width: 8),
                             _buildChip(profile.motherTongue),
                           ],

@@ -42,7 +42,8 @@ class _SearchScreenState extends State<SearchScreen> {
             .where(
               (p) =>
                   p.name.toLowerCase().contains(query.toLowerCase()) ||
-                  p.caste.toLowerCase().contains(query.toLowerCase()),
+                  (p.caste?.toLowerCase().contains(query.toLowerCase()) ??
+                      false),
             )
             .toList();
       }

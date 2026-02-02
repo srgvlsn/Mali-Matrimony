@@ -47,8 +47,22 @@ class AdminService {
     // Implement logic if needed
   }
 
-  // Get Analytics data (Mock for chart display)
-  Map<String, dynamic> getAnalyticsData() {
-    return {'totalUsers': 0, 'activeUsers': 0, 'premiumUsers': 0};
+  /// Get Analytics data from backend
+  Future<Map<String, dynamic>> getAnalyticsData() async {
+    final response = await BackendService.instance.getAnalytics();
+    if (response.success && response.data != null) {
+      return response.data!;
+    }
+
+    // Return zeros on error
+    return {
+      'total_users': 0,
+      'verified_users': 0,
+      'premium_users': 0,
+      'pending_verification': 0,
+      'recent_registrations': 0,
+      'male_users': 0,
+      'female_users': 0,
+    };
   }
 }

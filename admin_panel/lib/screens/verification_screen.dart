@@ -20,6 +20,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   Future<void> _loadData() async {
     final fetchedUsers = await AdminService.instance.getPendingUsers();
+    if (!mounted) return;
     setState(() {
       _pendingUsers = fetchedUsers;
     });

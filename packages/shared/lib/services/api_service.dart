@@ -1,4 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiService {
   static final ApiService instance = ApiService._internal();
@@ -11,8 +12,20 @@ class ApiService {
     try {
       await dotenv.load(fileName: 'packages/shared/assets/.env');
 
-      // Use API_URL from .env or fallback to localhost
-      _baseUrl = dotenv.env['API_URL'] ?? 'http://localhost:8000';
+      // Platform-specific URL handling
+      // Web/Desktop -> localhost:8000
+      // Android Emulator -> 10.0.2.2:8000
+      if (kIsWeb) {
+        // Running on web (including admin panel)
+        _baseUrl = 'http://127.0.0.1:8000';
+        print('🌐 Running on Web - Using 127.0.0.1:8000');
+      } else {
+        // Running on mobile - check if Android or iOS
+        // For now, assume Android emulator
+        String? envUrl = dotenv.env['API_URL'];
+        _baseUrl = envUrl ?? 'http://localhost:8000';
+        print('📱 Running on Mobile - Using: $_baseUrl');
+      }
 
       print('✅ API Service initialized with base URL: $_baseUrl');
     } catch (e) {

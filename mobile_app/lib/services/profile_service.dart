@@ -11,7 +11,12 @@ class ProfileService extends ChangeNotifier {
   Set<String> _shortlistedIds = {};
   bool _isLoading = false;
 
-  List<UserProfile> get profiles => _profiles;
+  List<UserProfile> get profiles {
+    final currentUser = AuthService.instance.currentUser;
+    if (currentUser == null) return _profiles;
+    return _profiles.where((p) => p.id != currentUser.id).toList();
+  }
+
   Set<String> get shortlistedIds => _shortlistedIds;
   bool get isLoading => _isLoading;
 
@@ -74,7 +79,9 @@ class ProfileService extends ChangeNotifier {
   }) async {
     // For now, filtering locally to keep it simple,
     // but in a real app this would be a Postgres query
+    final currentUser = AuthService.instance.currentUser;
     return _profiles.where((p) {
+      if (currentUser != null && p.id == currentUser.id) return false;
       if (minAge != null && p.age < minAge) return false;
       if (maxAge != null && p.age > maxAge) return false;
       if (location != null &&
@@ -82,7 +89,7 @@ class ProfileService extends ChangeNotifier {
         return false;
       }
       if (caste != null &&
-          !p.caste.toLowerCase().contains(caste.toLowerCase())) {
+          !(p.caste?.toLowerCase().contains(caste.toLowerCase()) ?? false)) {
         return false;
       }
       return true;
@@ -111,39 +118,41 @@ class ProfileService extends ChangeNotifier {
   }
 
   Future<void> updateProfilePhoto(List<int> bytes, String filename) async {
-    final currentUser = AuthService.instance.currentUser;
-    if (currentUser == null) return;
+    final response = await BackendService.instance.updateProfilePhoto(
+      bytes,
+      filename,
+    );
+    if (response.success) {
+      notifyListeners();
+    }
+  }
 
-    final response = await BackendService.instance.uploadImage(bytes, filename);
-    if (response.success && response.data != null) {
-      final updatedPhotos = List<String>.from(currentUser.photos)
-        ..add(response.data!);
-      final updatedProfile = currentUser.copyWith(photos: updatedPhotos);
+  Future<bool> addAdditionalPhoto(List<int> bytes, String filename) async {
+    final response = await BackendService.instance.addAdditionalPhoto(
+      bytes,
+      filename,
+    );
+    if (response.success) {
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
 
-      final updateResponse = await BackendService.instance.updateProfile(
-        updatedProfile,
-      );
-      if (updateResponse.success) {
-        notifyListeners();
-      }
+  Future<void> removePhoto(int index) async {
+    final response = await BackendService.instance.removePhoto(index);
+    if (response.success) {
+      notifyListeners();
     }
   }
 
   Future<void> uploadHoroscope(List<int> bytes, String filename) async {
-    final currentUser = AuthService.instance.currentUser;
-    if (currentUser == null) return;
-
-    final response = await BackendService.instance.uploadImage(bytes, filename);
-    if (response.success && response.data != null) {
-      final updatedProfile = currentUser.copyWith(
-        horoscopeImageUrl: response.data,
-      );
-      final updateResponse = await BackendService.instance.updateProfile(
-        updatedProfile,
-      );
-      if (updateResponse.success) {
-        notifyListeners();
-      }
+    final response = await BackendService.instance.uploadHoroscope(
+      bytes,
+      filename,
+    );
+    if (response.success) {
+      notifyListeners();
     }
   }
 

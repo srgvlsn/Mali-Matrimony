@@ -10,29 +10,52 @@ class AdminLoginScreen extends StatefulWidget {
 }
 
 class _AdminLoginScreenState extends State<AdminLoginScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _idController = TextEditingController();
   final _passController = TextEditingController();
   bool _isLoading = false;
 
   void _login() async {
-    if (_idController.text == "admin@mali" &&
-        _passController.text == "Admin@123") {
-      setState(() => _isLoading = true);
-      // Simulate API delay
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
+    if (_formKey.currentState?.validate() != true) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      debugPrint("Attempting admin login for: ${_idController.text.trim()}");
+      final response = await BackendService.instance.adminLogin(
+        _idController.text.trim(),
+        _passController.text.trim(),
+      );
+      debugPrint(
+        "Login response: success=${response.success}, message=${response.message}",
+      );
+
+      if (response.success && mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const AdminShell()),
         );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.message ?? "Login failed"),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Invalid Admin Credentials"),
-          backgroundColor: Colors.red,
-        ),
-      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("An error occurred: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -96,65 +119,89 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
             child: Container(
               color: AppStyles.background,
               padding: const EdgeInsets.symmetric(horizontal: 100),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Welcome Back",
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppStyles.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Please enter your credentials to continue.",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 48),
-                  _buildLabel("Admin ID"),
-                  TextField(
-                    controller: _idController,
-                    decoration: _buildInputDecoration("e.g. admin_01"),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildLabel("Password"),
-                  TextField(
-                    controller: _passController,
-                    obscureText: true,
-                    decoration: _buildInputDecoration("••••••••"),
-                  ),
-                  const SizedBox(height: 48),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: AppStyles.primaryButtonStyle.copyWith(
-                        padding: WidgetStateProperty.all(
-                          const EdgeInsets.symmetric(vertical: 24),
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Welcome Back",
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: AppStyles.primary,
+                          ),
                         ),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              "LOGIN TO DASHBOARD",
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Please enter your credentials to continue.",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 48),
+                        _buildLabel("Admin ID"),
+                        TextFormField(
+                          controller: _idController,
+                          decoration: _buildInputDecoration("e.g. admin_01"),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter your Admin ID";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        _buildLabel("Password"),
+                        TextFormField(
+                          controller: _passController,
+                          obscureText: true,
+                          decoration: _buildInputDecoration("••••••••"),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter your password";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 48),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _login,
+                            style: AppStyles.primaryButtonStyle.copyWith(
+                              padding: WidgetStateProperty.all(
+                                const EdgeInsets.symmetric(vertical: 24),
+                              ),
                             ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  )
+                                : const Text(
+                                    "LOGIN TO DASHBOARD",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Center(
+                          child: TextButton(
+                            onPressed: () {},
+                            child: const Text(
+                              "Forgot Password?",
+                              style: TextStyle(color: AppStyles.primary),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        "Forgot Password?",
-                        style: TextStyle(color: AppStyles.primary),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

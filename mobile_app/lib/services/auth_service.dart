@@ -7,26 +7,36 @@ class AuthService extends ChangeNotifier {
 
   static final AuthService instance = AuthService._internal();
 
-  bool _isLoggedIn = false;
-  UserProfile? _currentUser;
-
-  UserProfile? get currentUser =>
-      _currentUser ?? BackendService.instance.currentUser;
-  bool get isLoggedIn => _isLoggedIn || currentUser != null;
+  UserProfile? get currentUser => BackendService.instance.currentUser;
+  bool get isLoggedIn => currentUser != null;
 
   void refresh() {
     notifyListeners();
   }
 
-  /// Login attempt using PostgreSQL
-  Future<bool> login(String emailOrPhone, String password) async {
+  /// Login using Password
+  Future<bool> loginWithPassword(String phone, String password) async {
     final response = await BackendService.instance.login(
-      emailOrPhone,
-      password,
+      phone,
+      password: password,
     );
     if (response.success) {
-      _isLoggedIn = true;
-      _currentUser = response.data;
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  /// Request OTP
+  Future<bool> requestOtp(String phone) async {
+    final response = await BackendService.instance.requestOtp(phone);
+    return response.success;
+  }
+
+  /// Login using OTP
+  Future<bool> loginWithOtp(String phone, String otp) async {
+    final response = await BackendService.instance.verifyOtp(phone, otp);
+    if (response.success) {
       notifyListeners();
       return true;
     }
@@ -36,18 +46,18 @@ class AuthService extends ChangeNotifier {
   /// Registration using PostgreSQL
   Future<ApiResponse<UserProfile>> register(RegistrationData data) async {
     final user = data.toUserProfile();
-    final response = await BackendService.instance.registerUser(user);
+    final response = await BackendService.instance.registerUser(
+      user,
+      password: data.password,
+    );
     if (response.success) {
-      _isLoggedIn = true;
-      _currentUser = response.data;
       notifyListeners();
     }
     return response;
   }
 
   Future<void> logout() async {
-    _isLoggedIn = false;
-    _currentUser = null;
+    BackendService.instance.logout();
     notifyListeners();
   }
 }

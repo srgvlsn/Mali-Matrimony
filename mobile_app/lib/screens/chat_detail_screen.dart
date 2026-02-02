@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/chat_service.dart';
+import 'package:shared/shared.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final Conversation conversation;
@@ -54,12 +55,12 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
     final messages = _chatService.getMessages(widget.conversation.id);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFD1C8),
+      backgroundColor: AppStyles.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFD1C8),
+        backgroundColor: AppStyles.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF820815)),
+          icon: const Icon(Icons.arrow_back, color: AppStyles.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -72,7 +73,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             Text(
               widget.conversation.otherUserName,
               style: const TextStyle(
-                color: Color(0xFF820815),
+                color: AppStyles.primary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -109,7 +110,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: msg.isMe ? const Color(0xFF820815) : Colors.white,
+          color: msg.isMe ? AppStyles.primary : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
@@ -138,7 +139,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
   Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      decoration: const BoxDecoration(color: Color(0xFFFFD1C8)),
+      decoration: const BoxDecoration(color: AppStyles.background),
       child: Row(
         children: [
           Expanded(
@@ -149,7 +150,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 borderRadius: BorderRadius.circular(100),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF820815).withValues(alpha: 0.1),
+                    color: AppStyles.primary.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -171,7 +172,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(
-                color: Color(0xFF820815),
+                color: AppStyles.primary,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.send_rounded, color: Colors.white),

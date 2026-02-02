@@ -15,10 +15,15 @@ class BackendService {
 
   // ==================== Auth API ====================
 
-  Future<ApiResponse<UserProfile>> login(String phone, String password) async {
+  Future<ApiResponse<UserProfile>> login(
+    String phone, {
+    String? password,
+  }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/auth/login?phone=$phone'),
+        Uri.parse('$_baseUrl/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'phone': phone, 'password': password ?? ''}),
       );
 
       if (response.statusCode == 200) {
@@ -35,12 +40,47 @@ class BackendService {
     }
   }
 
-  Future<ApiResponse<UserProfile>> registerUser(UserProfile user) async {
+  Future<ApiResponse<Map<String, dynamic>>> adminLogin(
+    String username,
+    String password,
+  ) async {
     try {
+      print('🚀 Requesting Admin Login: $_baseUrl/admin/login');
+      final response = await http.post(
+        Uri.parse('$_baseUrl/admin/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'username': username, 'password': password}),
+      );
+
+      print('📥 Admin Login Response Code: ${response.statusCode}');
+      print('📥 Admin Login Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return ApiResponse.success(data['data']);
+      } else {
+        final Map<String, dynamic> errorData = json.decode(response.body);
+        return ApiResponse.error(errorData['detail'] ?? 'Admin login failed');
+      }
+    } catch (e) {
+      return ApiResponse.error('Admin login failed: $e');
+    }
+  }
+
+  Future<ApiResponse<UserProfile>> registerUser(
+    UserProfile user, {
+    String? password,
+  }) async {
+    try {
+      final userMap = user.toMap();
+      if (password != null) {
+        userMap['password'] = password;
+      }
+
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/register'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(user.toMap()),
+        body: json.encode(userMap),
       );
 
       if (response.statusCode == 200) {
@@ -54,6 +94,65 @@ class BackendService {
       }
     } catch (e) {
       return ApiResponse.error('Registration failed: $e');
+    }
+  }
+
+  Future<ApiResponse<bool>> requestOtp(String phone) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/request-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'phone': phone}),
+      );
+
+      if (response.statusCode == 200) {
+        return ApiResponse.success(true);
+      } else {
+        final Map<String, dynamic> errorData = json.decode(response.body);
+        return ApiResponse.error(
+          errorData['detail'] ?? 'Failed to request OTP',
+        );
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to request OTP: $e');
+    }
+  }
+
+  Future<ApiResponse<UserProfile>> verifyOtp(String phone, String otp) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/verify-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'phone': phone, 'otp': otp}),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final user = UserProfile.fromMap(data['data']);
+        _currentUser = user;
+        return ApiResponse.success(user);
+      } else {
+        final Map<String, dynamic> errorData = json.decode(response.body);
+        return ApiResponse.error(errorData['detail'] ?? 'Invalid OTP');
+      }
+    } catch (e) {
+      return ApiResponse.error('OTP verification failed: $e');
+    }
+  }
+
+  // ==================== Analytics API ====================
+
+  Future<ApiResponse<Map<String, dynamic>>> getAnalytics() async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/analytics'));
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return ApiResponse.success(data);
+      } else {
+        return ApiResponse.error('Failed to fetch analytics');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to fetch analytics: $e');
     }
   }
 
@@ -171,6 +270,100 @@ class BackendService {
     } catch (e) {
       return ApiResponse.error('Profile deletion failed: $e');
     }
+  }
+
+  // ==================== Photo Management ====================
+
+  Future<ApiResponse<void>> updateProfilePhoto(
+    List<int> bytes,
+    String filename,
+  ) async {
+    if (_currentUser == null) return ApiResponse.error('Not logged in');
+
+    final uploadResponse = await uploadImage(bytes, filename);
+    final url = uploadResponse.data;
+    if (!uploadResponse.success || url == null) {
+      return ApiResponse.error(uploadResponse.message ?? 'Upload failed');
+    }
+
+    final List<String> updatedPhotos = List<String>.from(_currentUser!.photos);
+    if (updatedPhotos.isEmpty) {
+      updatedPhotos.add(url);
+    } else {
+      updatedPhotos[0] = url;
+    }
+
+    final updatedProfile = _currentUser!.copyWith(photos: updatedPhotos);
+    final response = await updateProfile(updatedProfile);
+
+    if (response.success) {
+      _currentUser = updatedProfile;
+    }
+    return response;
+  }
+
+  Future<ApiResponse<void>> addAdditionalPhoto(
+    List<int> bytes,
+    String filename,
+  ) async {
+    if (_currentUser == null) return ApiResponse.error('Not logged in');
+
+    // Limit: 1 main + 3 additional = 4 total
+    if (_currentUser!.photos.length >= 4) {
+      return ApiResponse.error('Maximum 4 photos allowed');
+    }
+
+    final uploadResponse = await uploadImage(bytes, filename);
+    final url = uploadResponse.data;
+    if (!uploadResponse.success || url == null) {
+      return ApiResponse.error(uploadResponse.message ?? 'Upload failed');
+    }
+
+    final updatedPhotos = List<String>.from(_currentUser!.photos)..add(url);
+    final updatedProfile = _currentUser!.copyWith(photos: updatedPhotos);
+
+    final response = await updateProfile(updatedProfile);
+    if (response.success) {
+      _currentUser = updatedProfile;
+    }
+    return response;
+  }
+
+  Future<ApiResponse<void>> removePhoto(int index) async {
+    if (_currentUser == null || index >= _currentUser!.photos.length) {
+      return ApiResponse.error('Invalid operation');
+    }
+
+    final updatedPhotos = List<String>.from(_currentUser!.photos)
+      ..removeAt(index);
+    final updatedProfile = _currentUser!.copyWith(photos: updatedPhotos);
+
+    final response = await updateProfile(updatedProfile);
+    if (response.success) {
+      _currentUser = updatedProfile;
+    }
+    return response;
+  }
+
+  Future<ApiResponse<void>> uploadHoroscope(
+    List<int> bytes,
+    String filename,
+  ) async {
+    if (_currentUser == null) return ApiResponse.error('Not logged in');
+
+    final uploadResponse = await uploadImage(bytes, filename);
+    final url = uploadResponse.data;
+    if (!uploadResponse.success || url == null) {
+      return ApiResponse.error(uploadResponse.message ?? 'Upload failed');
+    }
+
+    final updatedProfile = _currentUser!.copyWith(horoscopeImageUrl: url);
+    final response = await updateProfile(updatedProfile);
+
+    if (response.success) {
+      _currentUser = updatedProfile;
+    }
+    return response;
   }
 
   // ==================== Interest API ====================

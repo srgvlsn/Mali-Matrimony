@@ -20,3 +20,12 @@ credentials.json
 # OS
 .DS_Store
 Thumbs.db
+
+# User Content
+backend/uploads/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+

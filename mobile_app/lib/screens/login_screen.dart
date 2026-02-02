@@ -15,10 +15,13 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _useOtp = false;
+  bool _otpSent = false;
 
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _otpController = TextEditingController();
 
   final _authService = AuthService.instance;
 
@@ -26,35 +29,73 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
+    bool success = false;
 
-    final success = await _authService.login(
-      _emailController.text.trim(), // email or phone
-      _passwordController.text,
-    );
-
-    if (!mounted) return;
-
-    setState(() => _isLoading = false);
-
-    if (success) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        (route) => false,
-      );
+    if (_useOtp) {
+      if (!_otpSent) {
+        // Request OTP
+        success = await _authService.requestOtp(_emailController.text.trim());
+        if (success) {
+          setState(() => _otpSent = true);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("OTP Sent! (Check console for demo code)"),
+              ),
+            );
+          }
+        } else {
+          _showError("Failed to send OTP. Check phone number.");
+        }
+      } else {
+        // Verify OTP Login
+        success = await _authService.loginWithOtp(
+          _emailController.text.trim(),
+          _otpController.text.trim(),
+        );
+        if (!success) _showError("Invalid OTP");
+      }
     } else {
+      // Password Login
+      success = await _authService.loginWithPassword(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      if (!success) _showError("Invalid Phone or Password");
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success && (_useOtp ? _otpSent : true)) {
+        // If OTP flow, we only navigate if verification succeeded (which sets currentUser)
+        // Actually loginWithOtp returns true only on success.
+        // For Request OTP, success is true but we don't navigate yet.
+        if (_useOtp && !_otpSent) {
+          // Case: Request OTP success (handled above by setting _otpSent)
+        } else {
+          // Login Success
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+            (route) => false,
+          );
+        }
+      }
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Invalid login credentials"),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     }
   }
@@ -77,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Text(
-                          "Login",
+                          "Welcome Back",
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
@@ -86,52 +127,81 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 32),
 
+                        // Toggle Tab
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          child: Row(
+                            children: [
+                              _buildTab("Password", !_useOtp),
+                              _buildTab("OTP", _useOtp),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
                         _buildTextField(
-                          label: "Email / Phone",
+                          label: "Phone Number",
                           controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
+                          keyboardType: TextInputType.phone,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter your email or phone';
+                              return 'Please enter your phone number';
                             }
-                            // Basic validation for email or 10-digit phone
-                            final isEmail = RegExp(
-                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            ).hasMatch(value);
-                            final isPhone = RegExp(r'^\d{10}$').hasMatch(value);
-                            if (!isEmail && !isPhone) {
-                              return "Enter a valid email or 10-digit phone number";
+                            if (value.length < 10) {
+                              return "Enter a valid 10-digit phone number";
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
 
-                        _buildPasswordField(),
+                        if (_useOtp) ...[
+                          if (_otpSent)
+                            _buildTextField(
+                              label: "Enter OTP",
+                              controller: _otpController,
+                              keyboardType: TextInputType.number,
+                              validator: (value) =>
+                                  value!.length < 4 ? "Enter valid OTP" : null,
+                            ),
+                          if (!_otpSent)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 8),
+                              child: Text(
+                                "We will send an OTP to your phone.",
+                                style: TextStyle(color: Color(0xFF820815)),
+                              ),
+                            ),
+                        ] else
+                          _buildPasswordField(),
 
-                        // Forgot Password
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ForgotPasswordScreen(),
+                        if (!_useOtp)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        const ForgotPasswordScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                "Forgot password?",
+                                style: TextStyle(
+                                  color: Color(0xFF6E040F),
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              );
-                            },
-                            child: const Text(
-                              "Forgot password?",
-                              style: TextStyle(
-                                color: Color(0xFF6E040F),
-                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
-                        ),
 
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 24),
 
                         SizedBox(
                           width: double.infinity,
@@ -144,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(100),
                               ),
                             ),
-                            onPressed: _isLoading ? null : _login,
+                            onPressed: _isLoading ? null : _handleLogin,
                             child: _isLoading
                                 ? const SizedBox(
                                     height: 20,
@@ -154,7 +224,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                       color: Color(0xFFFFD1C8),
                                     ),
                                   )
-                                : const Text("Login"),
+                                : Text(
+                                    _useOtp
+                                        ? (_otpSent
+                                              ? "Verify & Login"
+                                              : "Get OTP")
+                                        : "Login",
+                                  ),
                           ),
                         ),
 
@@ -196,6 +272,37 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildTab(String title, bool isActive) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _useOtp = title == "OTP";
+            _otpSent = false;
+            _otpController.clear();
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isActive ? const Color(0xFF820815) : Colors.transparent,
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isActive
+                  ? const Color(0xFFFFD1C8)
+                  : const Color(0xFF820815),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }

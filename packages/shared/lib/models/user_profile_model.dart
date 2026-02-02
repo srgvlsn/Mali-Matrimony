@@ -26,6 +26,7 @@ class UserProfile {
   final double height; // in feet or cm
   final Gender gender;
   final MaritalStatus maritalStatus;
+  final DateTime? dob;
   // Education & Career
   final String education;
   final String occupation;
@@ -41,9 +42,8 @@ class UserProfile {
   final int siblings;
 
   // Community
-  final String religion;
-  final String caste;
-  final String subCaste;
+  final String? caste;
+  final String? subCaste;
   final String motherTongue;
   final List<String> languages;
 
@@ -52,12 +52,6 @@ class UserProfile {
   final String bio;
   final String partnerPreferences;
   final String? horoscopeImageUrl;
-
-  // Horoscope Detailed (Template)
-  final String? rashi;
-  final String? nakshatra;
-  final String? birthTime;
-  final String? birthPlace;
 
   // Status
   final bool isVerified;
@@ -73,9 +67,9 @@ class UserProfile {
     required this.height,
     required this.gender,
     required this.maritalStatus,
-    required this.religion,
-    required this.caste,
-    required this.subCaste,
+    this.dob,
+    this.caste,
+    this.subCaste,
     required this.motherTongue,
     required this.languages,
     required this.education,
@@ -92,10 +86,6 @@ class UserProfile {
     required this.bio,
     this.partnerPreferences = '',
     this.horoscopeImageUrl,
-    this.rashi,
-    this.nakshatra,
-    this.birthTime,
-    this.birthPlace,
     this.isVerified = false,
     this.isPremium = false,
     this.createdAt,
@@ -109,7 +99,7 @@ class UserProfile {
     double? height,
     Gender? gender,
     MaritalStatus? maritalStatus,
-    String? religion,
+    DateTime? dob,
     String? caste,
     String? subCaste,
     String? motherTongue,
@@ -128,10 +118,6 @@ class UserProfile {
     String? bio,
     String? partnerPreferences,
     String? horoscopeImageUrl,
-    String? rashi,
-    String? nakshatra,
-    String? birthTime,
-    String? birthPlace,
     bool? isVerified,
     bool? isPremium,
     DateTime? createdAt,
@@ -145,7 +131,7 @@ class UserProfile {
       height: height ?? this.height,
       gender: gender ?? this.gender,
       maritalStatus: maritalStatus ?? this.maritalStatus,
-      religion: religion ?? this.religion,
+      dob: dob ?? this.dob,
       caste: caste ?? this.caste,
       subCaste: subCaste ?? this.subCaste,
       motherTongue: motherTongue ?? this.motherTongue,
@@ -164,10 +150,6 @@ class UserProfile {
       bio: bio ?? this.bio,
       partnerPreferences: partnerPreferences ?? this.partnerPreferences,
       horoscopeImageUrl: horoscopeImageUrl ?? this.horoscopeImageUrl,
-      rashi: rashi ?? this.rashi,
-      nakshatra: nakshatra ?? this.nakshatra,
-      birthTime: birthTime ?? this.birthTime,
-      birthPlace: birthPlace ?? this.birthPlace,
       isVerified: isVerified ?? this.isVerified,
       isPremium: isPremium ?? this.isPremium,
       createdAt: createdAt ?? this.createdAt,
@@ -175,8 +157,13 @@ class UserProfile {
   }
 
   double get completionPercentage {
-    final fields = [
+    int score = 0;
+    const totalFields = 25;
+
+    // String fields to check
+    final stringFields = [
       name,
+      phone,
       email,
       education,
       occupation,
@@ -187,25 +174,31 @@ class UserProfile {
       workMode,
       fatherName,
       motherName,
+      caste,
+      subCaste,
+      motherTongue,
       bio,
       partnerPreferences,
-      rashi,
-      nakshatra,
-      birthTime,
-      birthPlace,
+      horoscopeImageUrl,
     ];
 
-    int filledCount = fields
-        .where((f) => f != null && f.toString().trim().isNotEmpty)
-        .length;
+    for (var field in stringFields) {
+      if (field != null && field.trim().isNotEmpty) {
+        score++;
+      }
+    }
 
-    filledCount += 4; // age, height, siblings, gender (enums/nums)
-    if (languages.isNotEmpty) filledCount++;
+    // Number/Enum/List fields
+    if (age > 0) score++;
+    if (height > 0) score++;
+    if (siblings >= 0) score++; // Valid even if 0
+    if (languages.isNotEmpty) score++;
+    if (photos.isNotEmpty) score++;
 
-    if (photos.isNotEmpty) filledCount++;
-    if (email != null && email!.isNotEmpty) filledCount++;
+    // Base core fields (gender, maritalStatus) are always there
+    score += 2;
 
-    return (filledCount / 24).clamp(0.0, 1.0);
+    return (score / totalFields).clamp(0.0, 1.0);
   }
 
   /// Convert UserProfile to Map for database insertion
@@ -219,7 +212,7 @@ class UserProfile {
       'height': height,
       'gender': gender.name,
       'marital_status': maritalStatus.name,
-      'religion': religion,
+      'dob': dob?.toIso8601String(),
       'caste': caste,
       'sub_caste': subCaste,
       'mother_tongue': motherTongue,
@@ -238,10 +231,6 @@ class UserProfile {
       'bio': bio,
       'partner_preferences': partnerPreferences,
       'horoscope_image_url': horoscopeImageUrl,
-      'rashi': rashi,
-      'nakshatra': nakshatra,
-      'birth_time': birthTime,
-      'birth_place': birthPlace,
       'is_verified': isVerified,
       'is_premium': isPremium,
       'created_at': createdAt?.toIso8601String(),
@@ -251,43 +240,48 @@ class UserProfile {
   /// Create UserProfile from database Map
   static UserProfile fromMap(Map<String, dynamic> map) {
     return UserProfile(
-      id: map['id'] as String,
-      name: map['name'] as String,
+      id:
+          map['id'] as String? ??
+          'unk_${DateTime.now().millisecondsSinceEpoch}',
+      name: map['name'] as String? ?? 'Anonymous',
       phone: map['phone'] as String?,
       email: map['email'] as String?,
-      age: map['age'] as int,
-      height: (map['height'] as num).toDouble(),
-      gender: Gender.values.firstWhere((e) => e.name == map['gender']),
-      maritalStatus: MaritalStatus.values.firstWhere(
-        (e) => e.name == map['marital_status'],
+      age: map['age'] as int? ?? 25,
+      height: (map['height'] as num?)?.toDouble() ?? 165.0,
+      gender: Gender.values.firstWhere(
+        (e) =>
+            e.name.toLowerCase() == (map['gender'] as String?)?.toLowerCase(),
+        orElse: () => Gender.male,
       ),
-      religion: map['religion'] as String,
-      caste: map['caste'] as String,
-      subCaste: map['sub_caste'] as String,
-      motherTongue: map['mother_tongue'] as String,
+      maritalStatus: MaritalStatus.values.firstWhere(
+        (e) =>
+            e.name.toLowerCase() ==
+            (map['marital_status'] as String?)?.toLowerCase(),
+        orElse: () => MaritalStatus.neverMarried,
+      ),
+      dob: map['dob'] != null ? DateTime.tryParse(map['dob'] as String) : null,
+      caste: map['caste'] as String?,
+      subCaste: map['sub_caste'] as String?,
+      motherTongue: map['mother_tongue'] as String? ?? 'Marathi',
       languages: (map['languages'] as List<dynamic>?)?.cast<String>() ?? [],
-      education: map['education'] as String,
-      occupation: map['occupation'] as String,
-      company: map['company'] as String,
-      income: map['income'] as String,
-      location: map['location'] as String,
+      education: map['education'] as String? ?? 'N/A',
+      occupation: map['occupation'] as String? ?? 'N/A',
+      company: map['company'] as String? ?? 'N/A',
+      income: map['income'] as String? ?? 'N/A',
+      location: map['location'] as String? ?? 'N/A',
       hometown: map['hometown'] as String?,
       workMode: map['work_mode'] as String?,
-      fatherName: map['father_name'] as String,
-      motherName: map['mother_name'] as String,
-      siblings: map['siblings'] as int,
+      fatherName: map['father_name'] as String? ?? 'N/A',
+      motherName: map['mother_name'] as String? ?? 'N/A',
+      siblings: map['siblings'] as int? ?? 0,
       photos: (map['photos'] as List<dynamic>?)?.cast<String>() ?? [],
-      bio: map['bio'] as String,
+      bio: map['bio'] as String? ?? '',
       partnerPreferences: map['partner_preferences'] as String? ?? '',
       horoscopeImageUrl: map['horoscope_image_url'] as String?,
-      rashi: map['rashi'] as String?,
-      nakshatra: map['nakshatra'] as String?,
-      birthTime: map['birth_time'] as String?,
-      birthPlace: map['birth_place'] as String?,
       isVerified: map['is_verified'] as bool? ?? false,
       isPremium: map['is_premium'] as bool? ?? false,
       createdAt: map['created_at'] != null
-          ? DateTime.parse(map['created_at'] as String)
+          ? DateTime.tryParse(map['created_at'] as String)
           : null,
     );
   }

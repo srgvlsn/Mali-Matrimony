@@ -369,6 +369,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                 },
                 {
+                  "label": "Hometown",
+                  "value": profile.hometown ?? "Not provided",
+                  "onEdit": () => _editField(
+                    "Hometown",
+                    "City, State",
+                    profile.hometown ?? "",
+                    (val) async {
+                      final updated = profile.copyWith(hometown: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
+                {
                   "label": "Height",
                   "value": "${profile.height.toInt()} cm",
                   "onEdit": () => _editField(
@@ -398,22 +414,27 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               _buildDetailSection("Community & Education", [
                 {
                   "label": "Caste",
-                  "value": profile.caste,
-                  "onEdit": () => _editField("Caste", "Caste", profile.caste, (
-                    val,
-                  ) async {
-                    final updated = profile.copyWith(caste: val);
-                    await context.read<ProfileService>().updateProfile(updated);
-                    authService.refresh();
-                  }),
+                  "value": profile.caste ?? "Not provided",
+                  "onEdit": () => _editField(
+                    "Caste",
+                    "Caste",
+                    profile.caste ?? "",
+                    (val) async {
+                      final updated = profile.copyWith(caste: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
                 },
                 {
                   "label": "Sub-Caste",
-                  "value": profile.subCaste,
+                  "value": profile.subCaste ?? "Not provided",
                   "onEdit": () => _editField(
                     "Sub-Caste",
                     "Sub-Caste",
-                    profile.subCaste,
+                    profile.subCaste ?? "",
                     (val) async {
                       final updated = profile.copyWith(subCaste: val);
                       await context.read<ProfileService>().updateProfile(
@@ -455,7 +476,112 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     },
                   ),
                 },
+                {
+                  "label": "Company",
+                  "value": profile.company,
+                  "onEdit": () => _editField(
+                    "Company",
+                    "Company Name",
+                    profile.company,
+                    (val) async {
+                      final updated = profile.copyWith(company: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
+                {
+                  "label": "Annual Income",
+                  "value": profile.income,
+                  "onEdit": () => _editField(
+                    "Income",
+                    "Annual Income",
+                    profile.income,
+                    (val) async {
+                      final updated = profile.copyWith(income: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
+                {
+                  "label": "Work Mode",
+                  "value": profile.workMode ?? "Office",
+                  "onEdit": () => _editField(
+                    "Work Mode",
+                    "Office/WFH/Hybrid",
+                    profile.workMode ?? "Office",
+                    (val) async {
+                      final updated = profile.copyWith(workMode: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
               ]),
+              const SizedBox(height: 24),
+              _buildDetailSection("Family Details", [
+                {
+                  "label": "Father's Name",
+                  "value": profile.fatherName,
+                  "onEdit": () => _editField(
+                    "Father",
+                    "Full Name",
+                    profile.fatherName,
+                    (val) async {
+                      final updated = profile.copyWith(fatherName: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
+                {
+                  "label": "Mother's Name",
+                  "value": profile.motherName,
+                  "onEdit": () => _editField(
+                    "Mother",
+                    "Full Name",
+                    profile.motherName,
+                    (val) async {
+                      final updated = profile.copyWith(motherName: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
+                {
+                  "label": "Siblings",
+                  "value": profile.siblings.toString(),
+                  "onEdit": () => _editField(
+                    "Siblings",
+                    "Number of siblings",
+                    profile.siblings.toString(),
+                    (val) async {
+                      final s = int.tryParse(val);
+                      if (s != null) {
+                        final updated = profile.copyWith(siblings: s);
+                        await context.read<ProfileService>().updateProfile(
+                          updated,
+                        );
+                        authService.refresh();
+                      }
+                    },
+                    keyboardType: TextInputType.number,
+                  ),
+                },
+              ]),
+              const SizedBox(height: 24),
+              _buildAdditionalPhotosSection(profile, authService),
               const SizedBox(height: 24),
               _buildHoroscopeSection(profile),
               const SizedBox(height: 40),
@@ -626,6 +752,146 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               onPressed: detail['onEdit'],
             )
           : null,
+    );
+  }
+
+  Widget _buildAdditionalPhotosSection(
+    UserProfile profile,
+    AuthService authService,
+  ) {
+    // profile.photos[0] is main photo. Additional are from index 1.
+    final additionalPhotos = profile.photos.length > 1
+        ? profile.photos.sublist(1)
+        : <String>[];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 12),
+          child: Text(
+            "Additional Photos (Max 3)",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF820815),
+            ),
+          ),
+        ),
+        Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                if (additionalPhotos.isNotEmpty)
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                    itemCount: additionalPhotos.length,
+                    itemBuilder: (context, index) {
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image(
+                              image: _getImageProvider(additionalPhotos[index]),
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey[200],
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () async {
+                                await context
+                                    .read<ProfileService>()
+                                    .removePhoto(index + 1);
+                                authService.refresh();
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                if (additionalPhotos.length < 3) ...[
+                  if (additionalPhotos.isNotEmpty) const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final bytes = await MediaService.instance.pickImage(
+                        ImageSource.gallery,
+                      );
+                      if (bytes != null && mounted) {
+                        final success = await context
+                            .read<ProfileService>()
+                            .addAdditionalPhoto(
+                              bytes,
+                              'additional_${DateTime.now().millisecondsSinceEpoch}.jpg',
+                            );
+                        if (success) {
+                          authService.refresh();
+                        } else if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Maximum photo limit reached"),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.add_photo_alternate),
+                    label: const Text("Add Additional Photo"),
+                    style: AppStyles.outlinedButtonStyle,
+                  ),
+                ],
+                if (additionalPhotos.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      "No additional photos added",
+                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

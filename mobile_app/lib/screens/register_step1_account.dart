@@ -246,4 +246,3 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
     );
   }
 }
-
