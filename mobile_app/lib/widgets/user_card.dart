@@ -43,9 +43,9 @@ class UserCard extends StatelessWidget {
                   top: Radius.circular(24),
                 ),
                 child: Image.network(
-                  profile.photos.isNotEmpty
-                      ? profile.photos[0]
-                      : 'https://via.placeholder.com/200x200',
+                  ApiService.instance.resolveUrl(
+                    profile.photos.isNotEmpty ? profile.photos[0] : null,
+                  ),
                   fit: BoxFit.cover,
                   width: double.infinity,
                 ),
@@ -118,9 +118,9 @@ class UserCard extends StatelessWidget {
         leading: CircleAvatar(
           radius: 30,
           backgroundImage: NetworkImage(
-            profile.photos.isNotEmpty
-                ? profile.photos[0]
-                : 'https://via.placeholder.com/60x60',
+            ApiService.instance.resolveUrl(
+              profile.photos.isNotEmpty ? profile.photos[0] : null,
+            ),
           ),
         ),
         title: Text(

@@ -117,9 +117,9 @@ class _MatchesScreenState extends State<MatchesScreen> {
                   Stack(
                     children: [
                       Image.network(
-                        profile.photos.isNotEmpty
-                            ? profile.photos[0]
-                            : 'https://via.placeholder.com/400x200',
+                        ApiService.instance.resolveUrl(
+                          profile.photos.isNotEmpty ? profile.photos[0] : null,
+                        ),
                         height: 220,
                         width: double.infinity,
                         fit: BoxFit.cover,

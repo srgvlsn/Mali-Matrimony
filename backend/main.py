@@ -1,16 +1,26 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import uvicorn
+import os
+import shutil
+import uuid
 
 from . import models, schemas, database
 from .database import engine, get_db
+
+# Create directories
+os.makedirs("backend/uploads", exist_ok=True)
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Mali Matrimony API")
+
+# Mount uploads directory to serve images
+app.mount("/uploads", StaticFiles(directory="backend/uploads"), name="uploads")
 
 # Configure CORS
 app.add_middleware(
@@ -25,6 +35,27 @@ app.add_middleware(
 def read_root():
     return {"message": "Welcome to Mali Matrimony API"}
 
+@app.post("/upload", response_model=schemas.ApiResponse)
+async def upload_file(file: UploadFile = File(...)):
+    # Generate unique filename
+    file_extension = os.path.splitext(file.filename)[1]
+    unique_filename = f"{uuid.uuid4()}{file_extension}"
+    file_path = f"backend/uploads/{unique_filename}"
+    
+    # Save file
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Return the accessible URL
+    # Note: In a real setup, this would be your domain or local IP
+    file_url = f"/uploads/{unique_filename}"
+    
+    return schemas.ApiResponse(
+        status="success",
+        message="File uploaded successfully",
+        data={"url": file_url}
+    )
+
 # ==================== Auth API ====================
 
 @app.post("/auth/register", response_model=schemas.ApiResponse)
@@ -33,17 +64,28 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="User already registered")
     
-    # In a real app, hash the password if we were storing it separately
-    new_user = models.User(**user.model_dump())
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    return schemas.ApiResponse(
-        status="success",
-        message="User registered successfully",
-        data=schemas.UserResponse.model_validate(new_user).model_dump()
-    )
+    try:
+        new_user = models.User(**user.model_dump())
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        return schemas.ApiResponse(
+            status="success",
+            message="User registered successfully",
+            data=schemas.UserResponse.model_validate(new_user).model_dump()
+        )
+    except Exception as e:
+        db.rollback()
+        # Check for unique constraint violation (like phone number)
+        error_str = str(e).lower()
+        if "unique constraint" in error_str or "duplicate key" in error_str:
+            if "phone" in error_str:
+                raise HTTPException(status_code=400, detail="Phone number is already registered")
+            raise HTTPException(status_code=400, detail="Registration failed: Data already exists")
+        
+        print(f"Registration Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @app.post("/auth/login", response_model=schemas.ApiResponse)
 def login_user(phone: str, db: Session = Depends(get_db)):

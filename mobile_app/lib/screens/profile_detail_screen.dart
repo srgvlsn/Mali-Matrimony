@@ -109,7 +109,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
               },
               itemCount: profile.photos.length,
               itemBuilder: (context, index) {
-                return Image.network(profile.photos[index], fit: BoxFit.cover);
+                return Image.network(
+                  ApiService.instance.resolveUrl(profile.photos[index]),
+                  fit: BoxFit.cover,
+                );
               },
             ),
             if (profile.photos.length > 1)
@@ -278,7 +281,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
           image: DecorationImage(
-            image: NetworkImage(profile.horoscopeImageUrl!),
+            image: NetworkImage(
+              ApiService.instance.resolveUrl(profile.horoscopeImageUrl!),
+            ),
             fit: BoxFit.cover,
           ),
           boxShadow: [
@@ -333,7 +338,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 minScale: 0.5,
                 maxScale: 4.0,
                 child: Image.network(
-                  imageUrl,
+                  ApiService.instance.resolveUrl(imageUrl),
                   fit: BoxFit.contain,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;

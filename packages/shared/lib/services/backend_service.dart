@@ -61,6 +61,34 @@ class BackendService {
 
   UserProfile? get currentUser => _currentUser;
 
+  Future<ApiResponse<String>> uploadImage(
+    List<int> bytes,
+    String filename,
+  ) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/upload'),
+      );
+      request.files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: filename),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return ApiResponse.success(data['data']['url']);
+      } else {
+        final Map<String, dynamic> errorData = json.decode(response.body);
+        return ApiResponse.error(errorData['detail'] ?? 'Upload failed');
+      }
+    } catch (e) {
+      return ApiResponse.error('Upload failed: $e');
+    }
+  }
+
   Future<void> refreshCurrentUser() async {
     if (_currentUser == null) return;
 

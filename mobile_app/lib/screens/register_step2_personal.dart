@@ -87,9 +87,11 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
                             labelText: "Date of Birth",
                           ),
                           controller: TextEditingController(
-                            text: selectedDob == null
+                            text:
+                                DateFormatter.formatShortDate(selectedDob) ==
+                                    'N/A'
                                 ? ""
-                                : "${selectedDob!.day}/${selectedDob!.month}/${selectedDob!.year}",
+                                : DateFormatter.formatShortDate(selectedDob),
                           ),
                           validator: (value) {
                             if (selectedDob == null) {
@@ -228,4 +230,3 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
     );
   }
 }
-

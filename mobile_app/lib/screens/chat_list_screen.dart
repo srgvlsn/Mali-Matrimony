@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 import '../services/chat_service.dart';
 import 'chat_detail_screen.dart';
 
@@ -123,6 +124,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   String _formatTime(DateTime time) {
+    final now = DateTime.now();
+    if (now.difference(time).inDays > 0) {
+      return DateFormatter.formatShortDate(time);
+    }
     return "${time.hour}:${time.minute.toString().padLeft(2, '0')}";
   }
 }

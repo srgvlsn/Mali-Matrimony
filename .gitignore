@@ -11,6 +11,12 @@
 **/.vscode/
 **/*.iml
 
+# Environment and Secrets
+**/*.env
+**/.env
+**/secret.txt
+credentials.json
+
 # OS
 .DS_Store
 Thumbs.db

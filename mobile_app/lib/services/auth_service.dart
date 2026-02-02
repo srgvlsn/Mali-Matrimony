@@ -34,16 +34,15 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Registration using PostgreSQL
-  Future<bool> register(RegistrationData data) async {
+  Future<ApiResponse<UserProfile>> register(RegistrationData data) async {
     final user = data.toUserProfile();
     final response = await BackendService.instance.registerUser(user);
     if (response.success) {
       _isLoggedIn = true;
       _currentUser = response.data;
       notifyListeners();
-      return true;
     }
-    return false;
+    return response;
   }
 
   Future<void> logout() async {

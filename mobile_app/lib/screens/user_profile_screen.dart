@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared/shared.dart';
 import '../services/auth_service.dart';
 import '../services/profile_service.dart';
+import '../services/media_service.dart';
 import 'login_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -15,32 +15,22 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  final ImagePicker _picker = ImagePicker();
-
   ImageProvider _getImageProvider(String path) {
-    if (path.startsWith('http')) {
-      return NetworkImage(path);
-    }
-    return FileImage(File(path));
+    return NetworkImage(ApiService.instance.resolveUrl(path));
   }
 
   Future<void> _updatePhoto() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image == null || !mounted) return;
+    final bytes = await MediaService.instance.pickImage(ImageSource.gallery);
+    if (bytes == null || !mounted) return;
 
-    final authService = context.read<AuthService>();
     final profileService = context.read<ProfileService>();
-    final profile = authService.currentUser;
+    final authService = context.read<AuthService>();
 
-    if (profile != null) {
-      final updatedProfile = profile.copyWith(
-        photos: [image.path, ...profile.photos.skip(1)],
-      );
-      final success = await profileService.updateProfile(updatedProfile);
-      if (success && mounted) {
-        authService.refresh();
-      }
-    }
+    await profileService.updateProfilePhoto(
+      bytes,
+      'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
+    authService.refresh();
   }
 
   Future<void> _editHoroscope() async {
@@ -68,15 +58,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               leading: const Icon(Icons.photo_library),
               title: const Text("Pick from Gallery"),
               onTap: () async {
-                final XFile? image = await _picker.pickImage(
-                  source: ImageSource.gallery,
+                final bytes = await MediaService.instance.pickImage(
+                  ImageSource.gallery,
                 );
-                if (image != null && context.mounted) {
-                  final updatedProfile = profile.copyWith(
-                    horoscopeImageUrl: image.path,
-                  );
-                  await context.read<ProfileService>().updateProfile(
-                    updatedProfile,
+                if (bytes != null && context.mounted) {
+                  await context.read<ProfileService>().uploadHoroscope(
+                    bytes,
+                    'horoscope_${DateTime.now().millisecondsSinceEpoch}.jpg',
                   );
                   if (context.mounted) {
                     authService.refresh();

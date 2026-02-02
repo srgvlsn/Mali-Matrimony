@@ -109,4 +109,45 @@ class ProfileService extends ChangeNotifier {
       return null;
     }
   }
+
+  Future<void> updateProfilePhoto(List<int> bytes, String filename) async {
+    final currentUser = AuthService.instance.currentUser;
+    if (currentUser == null) return;
+
+    final response = await BackendService.instance.uploadImage(bytes, filename);
+    if (response.success && response.data != null) {
+      final updatedPhotos = List<String>.from(currentUser.photos)
+        ..add(response.data!);
+      final updatedProfile = currentUser.copyWith(photos: updatedPhotos);
+
+      final updateResponse = await BackendService.instance.updateProfile(
+        updatedProfile,
+      );
+      if (updateResponse.success) {
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> uploadHoroscope(List<int> bytes, String filename) async {
+    final currentUser = AuthService.instance.currentUser;
+    if (currentUser == null) return;
+
+    final response = await BackendService.instance.uploadImage(bytes, filename);
+    if (response.success && response.data != null) {
+      final updatedProfile = currentUser.copyWith(
+        horoscopeImageUrl: response.data,
+      );
+      final updateResponse = await BackendService.instance.updateProfile(
+        updatedProfile,
+      );
+      if (updateResponse.success) {
+        notifyListeners();
+      }
+    }
+  }
+
+  void refresh() {
+    notifyListeners();
+  }
 }

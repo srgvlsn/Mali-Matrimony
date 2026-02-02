@@ -77,7 +77,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         radius: 30,
                         backgroundColor: Colors.grey[200],
                         backgroundImage: user.photos.isNotEmpty
-                            ? NetworkImage(user.photos[0])
+                            ? NetworkImage(
+                                ApiService.instance.resolveUrl(user.photos[0]),
+                              )
                             : null,
                         child: user.photos.isEmpty
                             ? const Icon(Icons.person, color: Colors.grey)

@@ -107,9 +107,9 @@ class _SearchScreenState extends State<SearchScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.network(
-                  profile.photos.isNotEmpty
-                      ? profile.photos[0]
-                      : 'https://via.placeholder.com/100',
+                  ApiService.instance.resolveUrl(
+                    profile.photos.isNotEmpty ? profile.photos[0] : null,
+                  ),
                   height: 80,
                   width: 80,
                   fit: BoxFit.cover,

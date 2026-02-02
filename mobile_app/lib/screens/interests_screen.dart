@@ -203,6 +203,16 @@ class _InterestCard extends StatelessWidget {
                           ).colorScheme.primary.withValues(alpha: 0.6),
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Interested on: ${DateFormatter.formatShortDate(interest.timestamp)}",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.4),
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       _buildStatusChip(),
                     ],

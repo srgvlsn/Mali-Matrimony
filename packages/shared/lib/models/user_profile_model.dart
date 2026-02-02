@@ -62,6 +62,7 @@ class UserProfile {
   // Status
   final bool isVerified;
   final bool isPremium;
+  final DateTime? createdAt;
 
   UserProfile({
     required this.id,
@@ -97,6 +98,7 @@ class UserProfile {
     this.birthPlace,
     this.isVerified = false,
     this.isPremium = false,
+    this.createdAt,
   });
 
   UserProfile copyWith({
@@ -132,6 +134,7 @@ class UserProfile {
     String? birthPlace,
     bool? isVerified,
     bool? isPremium,
+    DateTime? createdAt,
   }) {
     return UserProfile(
       id: this.id,
@@ -167,6 +170,7 @@ class UserProfile {
       birthPlace: birthPlace ?? this.birthPlace,
       isVerified: isVerified ?? this.isVerified,
       isPremium: isPremium ?? this.isPremium,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
@@ -240,6 +244,7 @@ class UserProfile {
       'birth_place': birthPlace,
       'is_verified': isVerified,
       'is_premium': isPremium,
+      'created_at': createdAt?.toIso8601String(),
     };
   }
 
@@ -281,6 +286,9 @@ class UserProfile {
       birthPlace: map['birth_place'] as String?,
       isVerified: map['is_verified'] as bool? ?? false,
       isPremium: map['is_premium'] as bool? ?? false,
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'] as String)
+          : null,
     );
   }
 }

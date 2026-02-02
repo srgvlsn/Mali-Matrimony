@@ -121,6 +121,15 @@ class _UserListScreenState extends State<UserListScreen> {
                     ),
                     DataColumn(
                       label: Text(
+                        "Joined",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppStyles.primary,
+                        ),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
                         "Actions",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
@@ -138,7 +147,11 @@ class _UserListScreenState extends State<UserListScreen> {
                               CircleAvatar(
                                 radius: 16,
                                 backgroundImage: user.photos.isNotEmpty
-                                    ? NetworkImage(user.photos[0])
+                                    ? NetworkImage(
+                                        ApiService.instance.resolveUrl(
+                                          user.photos[0],
+                                        ),
+                                      )
                                     : null,
                                 child: user.photos.isEmpty
                                     ? const Icon(Icons.person, size: 16)
@@ -179,6 +192,12 @@ class _UserListScreenState extends State<UserListScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            DateFormatter.formatShortDate(user.createdAt),
+                            style: const TextStyle(fontSize: 13),
                           ),
                         ),
                         DataCell(

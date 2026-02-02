@@ -49,7 +49,9 @@ class UserDetailDialog extends StatelessWidget {
                   CircleAvatar(
                     radius: 60,
                     backgroundImage: user.photos.isNotEmpty
-                        ? NetworkImage(user.photos[0])
+                        ? NetworkImage(
+                            ApiService.instance.resolveUrl(user.photos[0]),
+                          )
                         : null,
                     child: user.photos.isEmpty
                         ? const Icon(Icons.person, size: 60)
@@ -104,6 +106,11 @@ class UserDetailDialog extends StatelessWidget {
                   Expanded(child: _buildInfoSection("Caste", user.caste)),
                   Expanded(child: _buildInfoSection("Income", user.income)),
                 ],
+              ),
+              const SizedBox(height: 16),
+              _buildInfoSection(
+                "Registration Date",
+                DateFormatter.formatLongDate(user.createdAt),
               ),
               const Divider(height: 48),
               Row(
