@@ -27,13 +27,19 @@ flutter run -d chrome
 
 ## 📝 Change Log
 
-### Version 0.5.1 - 2026-02-02 15:42
+### Version 0.6.0 - 2026-02-02 15:45
 **Contributor**: Sreerag Valsan
-> - **Security Hardening**: Implemented Bcrypt password hashing and strict login verification.
-> - **Schema Synchronization**: Realigned PostgreSQL schema with Mobile UI registration steps (Added `dob`, Removed `religion`).
-> - **Privacy Fix**: Filtered current user from matches and search results.
-> - **Maintenance**: Formatted entire codebase (Dart/Flutter) and cleared test data for fresh launch.
+> - **Security Hardening**: Implemented secure password hashing (`bcrypt`) and strict login verification.
+> - **Privacy**: Moved login credentials to secure JSON POST bodies.
+> - **Consistency**: Synchronized database schema with UI Steps (Added `dob`, Removed `religion`).
+> - **Refinement**: Implemented self-filtering in matches/search results.
+> - **Code Quality**: Performed project-wide Flutter/Dart formatting.
 
 ### Version 0.5.0 - 2026-02-02 02:08
+**Contributor**: Sreerag Valsan
+> - Transitioned to **Indirect Architecture** using a Python (FastAPI) backend.
+> - Fully integrated with **PostgreSQL** database.
+> - Implemented real data persistence for Profiles, Interests, and Shortlists.
+> - Resolved Admin TODOs for profile deletion and interest management.
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.

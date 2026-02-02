@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-02-02
+### Added
+- **Security Hardening**: Implemented secure password hashing using **bcrypt** for standard user accounts.
+- **DOB Support**: Synchronized "Date of Birth" across all layers (DB, API, Shared Model, and Mobile Registration).
+- **Self-Filtering**: Implemented profile exclusion to prevent users from seeing themselves in match listings.
+
+### Changed
+- **Secure Auth**: Transitioned login credentials from URL query parameters to secure JSON POST request bodies.
+- **Schema Alignment**: Re-synchronized backend model and PostgreSQL schema with the mobile application's 5-step registration flow.
+- **Code Quality**: Applied project-wide `dart format` to ensure consistent code styling.
+
+### Removed
+- **Redundant Schema**: Deleted the `religion` column from the database and backend as it was identified as out-of-scope for the current registration flow.
+
 ## [0.5.0] - 2026-02-02
 ### Added
 - **Python Backend**: Implemented a standalone API backend using **FastAPI** and **SQLAlchemy**.
