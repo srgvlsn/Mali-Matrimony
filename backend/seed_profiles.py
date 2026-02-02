@@ -12,8 +12,11 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Database connection
-DB_URL = "postgresql://postgres:1234567890@localhost:5432/mali_matrimony"
+# Database connection - load from .env
+import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+DB_URL = os.getenv("DATABASE_URL")
 
 # Unsplash image URLs for realistic photos
 MALE_PHOTOS = [

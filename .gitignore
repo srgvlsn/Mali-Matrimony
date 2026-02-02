@@ -31,3 +31,5 @@ backend/uploads/
 
 # Local scripts
 start_backend.bat
+seed_profiles.py
+test_profiles.txt

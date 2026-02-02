@@ -27,6 +27,15 @@ flutter run -d chrome
 
 ## 📝 Change Log
 
+### Version 0.6.5 - 2026-02-02 18:28
+**Contributor**: Sreerag Valsan
+> - **Login Fix**: Added 10-second timeout and debug logging to prevent infinite loading.
+> - **Backend Fix**: Fixed `async` syntax error in `update_profile` endpoint.
+> - **Database Migration**: Added `view_count` column and fixed `shortlists` table schema.
+> - **WebSocket Stability**: Added graceful error handling with max retry limits.
+> - **Test Data**: Created 6 dummy profiles (3M/3F) with real photos for testing.
+> - **Developer Experience**: Added `start_backend.bat` for easier server startup.
+
 ### Version 0.6.0 - 2026-02-02 15:45
 **Contributor**: Sreerag Valsan
 > - **Security Hardening**: Implemented secure password hashing (`bcrypt`) and strict login verification.
