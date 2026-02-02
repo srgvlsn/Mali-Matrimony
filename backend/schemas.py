@@ -45,6 +45,7 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: str
+    view_count: int = 0
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
@@ -88,4 +89,28 @@ class AdminResponse(BaseModel):
     id: str
     username: str
     role: str
+    model_config = ConfigDict(from_attributes=True)
+
+class NotificationCreate(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    message: str
+    type: str
+    related_user_id: Optional[str] = None
+
+class NotificationResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    message: str
+    type: str
+    is_read: bool
+    related_user_id: Optional[str] = None
+    timestamp: datetime
+    model_config = ConfigDict(from_attributes=True)
+class UserAnalytics(BaseModel):
+    total_views: int
+    interests_received: int
+    shortlisted_by: int
     model_config = ConfigDict(from_attributes=True)

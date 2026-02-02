@@ -6,98 +6,14 @@ class ChatService extends ChangeNotifier {
   ChatService._internal();
   factory ChatService() => instance;
 
-  final List<Conversation> _conversations = [
-    Conversation(
-      id: 'conv_1',
-      otherUserId: 'user_123',
-      otherUserName: 'Priya Sharma',
-      otherUserPhoto:
-          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop',
-      lastMessage: 'Hi, I liked your profile!',
-      lastMessageTime: DateTime.now().subtract(const Duration(minutes: 15)),
-      unreadCount: 2,
-    ),
-    Conversation(
-      id: 'conv_2',
-      otherUserId: 'user_789',
-      otherUserName: 'Anjali Patel',
-      otherUserPhoto:
-          'https://images.unsplash.com/photo-1531123897727-8f129e16fd3c?q=80&w=1000&auto=format&fit=crop',
-      lastMessage: 'Let me talk to my parents first.',
-      lastMessageTime: DateTime.now().subtract(const Duration(hours: 2)),
-    ),
-    Conversation(
-      id: 'conv_3',
-      otherUserId: 'user_102',
-      otherUserName: 'Siddharth Mali',
-      otherUserPhoto:
-          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop',
-      lastMessage: 'I will be in Pune next weekend.',
-      lastMessageTime: DateTime.now().subtract(const Duration(hours: 5)),
-    ),
-    Conversation(
-      id: 'conv_4',
-      otherUserId: 'user_103',
-      otherUserName: 'Neha Deshmukh',
-      otherUserPhoto:
-          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1000&auto=format&fit=crop',
-      lastMessage: 'Hello! Thanks for the interest.',
-      lastMessageTime: DateTime.now().subtract(const Duration(days: 1)),
-    ),
-  ];
-
-  final Map<String, List<ChatMessage>> _messages = {
-    'conv_1': [
-      ChatMessage(
-        id: 'msg_1',
-        senderId: 'user_123',
-        text: 'Hi there!',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 20)),
-        isMe: false,
-      ),
-      ChatMessage(
-        id: 'msg_2',
-        senderId: 'user_123',
-        text: 'I liked your profile!',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
-        isMe: false,
-      ),
-    ],
-    'conv_3': [
-      ChatMessage(
-        id: 'msg_31',
-        senderId: 'user_102',
-        text: 'Hi, are you based in Pune or Bangalore?',
-        timestamp: DateTime.now().subtract(const Duration(hours: 6)),
-        isMe: false,
-      ),
-      ChatMessage(
-        id: 'msg_32',
-        senderId: 'me',
-        text: 'I am based in Pune, but I visit Bangalore often for work.',
-        timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-        isMe: true,
-      ),
-      ChatMessage(
-        id: 'msg_33',
-        senderId: 'user_102',
-        text: 'That is great! I will be in Pune next weekend.',
-        timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-        isMe: false,
-      ),
-    ],
-    'conv_4': [
-      ChatMessage(
-        id: 'msg_41',
-        senderId: 'user_103',
-        text: 'Hello! Thanks for the interest.',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        isMe: false,
-      ),
-    ],
-  };
+  final List<Conversation> _conversations = [];
+  final Map<String, List<ChatMessage>> _messages = {};
 
   List<Conversation> get conversations => _conversations;
+
+  int get totalUnreadCount {
+    return _conversations.fold(0, (sum, item) => sum + item.unreadCount);
+  }
 
   List<ChatMessage> getMessages(String conversationId) {
     return _messages[conversationId] ?? [];

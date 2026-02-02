@@ -641,6 +641,42 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       : null,
                 ),
               ),
+              if (profile.isVerified)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Consumer<ProfileService>(
+                    builder: (context, profileService, child) {
+                      final isHighlit = profileService.shouldHighlightBadge;
+                      return AnimatedScale(
+                        scale: isHighlit ? 1.4 : 1.0,
+                        duration: const Duration(milliseconds: 800),
+                        curve: Curves.elasticOut,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                            boxShadow: isHighlit
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.blue.withValues(alpha: 0.5),
+                                      blurRadius: 10,
+                                      spreadRadius: 4,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: const Icon(
+                            Icons.verified,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               Positioned(
                 bottom: 8,
                 right: 8,
@@ -784,88 +820,86 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           elevation: 2,
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                if (additionalPhotos.isNotEmpty)
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ),
-                    itemCount: additionalPhotos.length,
-                    itemBuilder: (context, index) {
-                      return Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image(
-                              image: _getImageProvider(additionalPhotos[index]),
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey[200],
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.broken_image,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: GestureDetector(
-                              onTap: () async {
-                                await context
-                                    .read<ProfileService>()
-                                    .removePhoto(index + 1);
-                                authService.refresh();
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 14,
+            padding: const EdgeInsets.all(8),
+            child: GridView.builder(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: additionalPhotos.length < 3
+                  ? additionalPhotos.length + 1
+                  : 3,
+              itemBuilder: (context, index) {
+                if (index < additionalPhotos.length) {
+                  // Photo slot
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image(
+                          image: _getImageProvider(additionalPhotos[index]),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey,
                                 ),
                               ),
+                            );
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () async {
+                            await context.read<ProfileService>().removePhoto(
+                              index + 1,
+                            );
+                            authService.refresh();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 14,
                             ),
                           ),
-                        ],
-                      );
-                    },
-                  ),
-                if (additionalPhotos.length < 3) ...[
-                  if (additionalPhotos.isNotEmpty) const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () async {
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  // Add photo slot
+                  return GestureDetector(
+                    onTap: () async {
                       final bytes = await MediaService.instance.pickImage(
                         ImageSource.gallery,
                       );
-                      if (bytes != null && mounted) {
+                      if (bytes != null && context.mounted) {
                         final success = await context
                             .read<ProfileService>()
                             .addAdditionalPhoto(
                               bytes,
                               'additional_${DateTime.now().millisecondsSinceEpoch}.jpg',
                             );
-                        if (success) {
+                        if (success && context.mounted) {
                           authService.refresh();
-                        } else if (mounted) {
+                        } else if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text("Maximum photo limit reached"),
@@ -874,20 +908,27 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         }
                       }
                     },
-                    icon: const Icon(Icons.add_photo_alternate),
-                    label: const Text("Add Additional Photo"),
-                    style: AppStyles.outlinedButtonStyle,
-                  ),
-                ],
-                if (additionalPhotos.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      "No additional photos added",
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF820815).withValues(alpha: 0.2),
+                          style: BorderStyle.solid,
+                          width: 1,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.add_photo_alternate_outlined,
+                          color: Color(0xFF820815),
+                          size: 32,
+                        ),
+                      ),
                     ),
-                  ),
-              ],
+                  );
+                }
+              },
             ),
           ),
         ),

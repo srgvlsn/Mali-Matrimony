@@ -42,6 +42,8 @@ class ApiService {
     return _baseUrl!;
   }
 
+  String get wsUrl => baseUrl.replaceFirst('http', 'ws');
+
   /// Resolve a potentially relative URL to an absolute one
   String resolveUrl(String? path) {
     if (path == null || path.isEmpty) return 'https://via.placeholder.com/150';

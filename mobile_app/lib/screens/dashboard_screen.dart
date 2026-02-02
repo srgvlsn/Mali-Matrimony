@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/notification_service.dart';
+import '../services/auth_service.dart';
+import '../services/chat_service.dart';
+import '../services/interest_service.dart';
 import 'profile_detail_screen.dart';
-import 'matches_screen.dart';
 import 'chat_list_screen.dart';
 import 'user_profile_screen.dart';
 import 'interests_screen.dart';
@@ -11,7 +13,6 @@ import '../services/profile_service.dart';
 import 'package:shared/shared.dart';
 import '../widgets/user_card.dart';
 import '../widgets/custom_search_bar.dart';
-import '../widgets/quick_action_card.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -25,7 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   final List<Widget> _screens = [
     const _HomeView(),
-    const MatchesScreen(),
+    const InterestsScreen(),
     const ChatListScreen(),
     const UserProfileScreen(),
   ];
@@ -67,7 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _showNotificationPopup(context);
                     },
                   ),
-                  if (unreadCount > 0)
+                  if (notificationService.showIndicator)
                     Positioned(
                       right: 8,
                       top: 8,
@@ -131,40 +132,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: MediaQuery.removePadding(
               context: context,
               removeBottom: true,
-              child: BottomNavigationBar(
-                currentIndex: _selectedIndex,
-                onTap: (index) {
-                  setState(() {
-                    _selectedIndex = index;
-                  });
+              child: Consumer2<InterestService, ChatService>(
+                builder: (context, interestService, chatService, child) {
+                  return BottomNavigationBar(
+                    currentIndex: _selectedIndex,
+                    onTap: (index) {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
+                    },
+                    backgroundColor: Colors.white,
+                    selectedItemColor: Theme.of(context).colorScheme.primary,
+                    unselectedItemColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.4),
+                    type: BottomNavigationBarType.fixed,
+                    showSelectedLabels: true,
+                    showUnselectedLabels: false,
+                    elevation: 0,
+                    items: [
+                      const BottomNavigationBarItem(
+                        icon: Icon(Icons.home_rounded),
+                        label: "Home",
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Badge(
+                          label: Text('${interestService.unreadReceivedCount}'),
+                          isLabelVisible:
+                              interestService.unreadReceivedCount > 0,
+                          child: const Icon(Icons.star_rounded),
+                        ),
+                        label: "Interests",
+                      ),
+                      BottomNavigationBarItem(
+                        icon: Badge(
+                          label: Text('${chatService.totalUnreadCount}'),
+                          isLabelVisible: chatService.totalUnreadCount > 0,
+                          child: const Icon(Icons.chat_bubble_rounded),
+                        ),
+                        label: "Chat",
+                      ),
+                      const BottomNavigationBarItem(
+                        icon: Icon(Icons.person_rounded),
+                        label: "Profile",
+                      ),
+                    ],
+                  );
                 },
-                backgroundColor: Colors.white,
-                selectedItemColor: Theme.of(context).colorScheme.primary,
-                unselectedItemColor: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.4),
-                type: BottomNavigationBarType.fixed,
-                showSelectedLabels: true,
-                showUnselectedLabels: false,
-                elevation: 0,
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.home_rounded),
-                    label: "Home",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.favorite_rounded),
-                    label: "Matches",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.chat_bubble_rounded),
-                    label: "Chat",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.person_rounded),
-                    label: "Profile",
-                  ),
-                ],
               ),
             ),
           ),
@@ -176,7 +190,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _getAppBarTitle() {
     switch (_selectedIndex) {
       case 1:
-        return "New Matches";
+        return "Interests Hub";
       case 2:
         return "Messages";
       case 3:
@@ -187,6 +201,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _showNotificationPopup(BuildContext context) {
+    final notificationService = Provider.of<NotificationService>(
+      context,
+      listen: false,
+    );
+    notificationService.fetchForCurrentUser();
+    notificationService.clearIndicator();
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -241,20 +261,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ).colorScheme.primary,
                                     ),
                                   ),
-                                  if (notificationService.unreadCount > 0)
-                                    TextButton(
-                                      onPressed: () =>
-                                          notificationService.markAllAsRead(),
-                                      child: Text(
-                                        "Mark all as read",
-                                        style: TextStyle(
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.refresh_rounded,
                                           color: Theme.of(
                                             context,
                                           ).colorScheme.primary,
-                                          fontWeight: FontWeight.w600,
                                         ),
+                                        onPressed: () => notificationService
+                                            .fetchForCurrentUser(),
                                       ),
-                                    ),
+                                      if (notificationService.unreadCount > 0)
+                                        TextButton(
+                                          onPressed: () => notificationService
+                                              .markAllAsRead(),
+                                          child: Text(
+                                            "Mark all as read",
+                                            style: TextStyle(
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -380,10 +414,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         onTap: () {
-          if (!notification.isRead) {
+          final wasUnread = !notification.isRead;
+          if (wasUnread) {
             service.markAsRead(notification.id);
           }
-          if (notification.relatedUserId != null) {
+          if (notification.title == "Profile Verified") {
+            Navigator.pop(context); // Close notification popup
+            setState(() => _selectedIndex = 3); // Switch to Profile Tab
+            if (wasUnread) {
+              // Refresh profile and then trigger animation after a small delay
+              // Use unawaited/non-blocking if possible or just wait
+              final authService = Provider.of<AuthService>(
+                context,
+                listen: false,
+              );
+              final profileService = Provider.of<ProfileService>(
+                context,
+                listen: false,
+              );
+
+              authService.refreshProfile().then((_) {
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  profileService.triggerBadgeHighlight();
+                });
+              });
+            }
+          } else if (notification.relatedUserId != null) {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -426,14 +482,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-class _HomeView extends StatelessWidget {
+class _HomeView extends StatefulWidget {
   const _HomeView();
 
   @override
+  State<_HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<_HomeView> {
+  @override
   Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: [
+          _buildInternalTabBar(),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildDiscoveryTab(),
+                _buildProfilesTab(isShortlisted: false),
+                _buildProfilesTab(isShortlisted: true),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInternalTabBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(100),
+        boxShadow: AppStyles.cardShadow,
+      ),
+      child: TabBar(
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(100),
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        labelColor: Colors.white,
+        unselectedLabelColor: Theme.of(context).colorScheme.primary,
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        tabs: const [
+          Tab(text: "Discover"),
+          Tab(text: "Suggestions"),
+          Tab(text: "Shortlisted"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiscoveryTab() {
     return Consumer<ProfileService>(
       builder: (context, profileService, child) {
-        if (profileService.isLoading) {
+        if (profileService.isLoading && profileService.profiles.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -446,34 +555,15 @@ class _HomeView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24),
                   child: CustomSearchBar(),
                 ),
                 const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    children: [
-                      QuickActionCard(
-                        icon: Icons.star_rounded,
-                        label: "Interests",
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const InterestsScreen(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
 
                 // Featured Matches Section
                 _buildSectionHeader(context, "Featured Matches", () {
-                  // Navigate to matches or search
+                  DefaultTabController.of(context).animateTo(1);
                 }),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -497,7 +587,7 @@ class _HomeView extends StatelessWidget {
 
                 // Recent Members Section
                 _buildSectionHeader(context, "Recent Members", () {
-                  // Navigate to search
+                  DefaultTabController.of(context).animateTo(1);
                 }),
                 const SizedBox(height: 16),
                 profiles.isEmpty
@@ -511,11 +601,338 @@ class _HomeView extends StatelessWidget {
                           return UserCard(profile: profiles[index]);
                         },
                       ),
+                const SizedBox(height: 32),
+
+                // Profile Reach Dashboard
+                _buildProfileReachDashboard(profileService),
+                const SizedBox(height: 120),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildProfileReachDashboard(ProfileService profileService) {
+    final analytics = profileService.analytics;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Profile Reach",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "Your performance this week",
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.trending_up_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                _buildReachItem(
+                  "Views",
+                  analytics?.totalViews.toString() ?? "0",
+                  Icons.remove_red_eye_outlined,
+                ),
+                _buildReachDivider(),
+                _buildReachItem(
+                  "Interests",
+                  analytics?.interestsReceived.toString() ?? "0",
+                  Icons.star_outline_rounded,
+                ),
+                _buildReachDivider(),
+                _buildReachItem(
+                  "Shortlists",
+                  analytics?.shortlistedBy.toString() ?? "0",
+                  Icons.favorite_border_rounded,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReachItem(String label, String value, IconData icon) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white70, size: 20),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReachDivider() {
+    return Container(
+      height: 40,
+      width: 1,
+      color: Colors.white.withValues(alpha: 0.2),
+    );
+  }
+
+  Widget _buildProfilesTab({required bool isShortlisted}) {
+    return Consumer<ProfileService>(
+      builder: (context, profileService, child) {
+        final profiles = isShortlisted
+            ? profileService.shortlistProfiles()
+            : profileService.profiles;
+
+        if (profileService.isLoading && profiles.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (profiles.isEmpty) {
+          return Center(
+            child: Text(
+              isShortlisted
+                  ? "No shortlisted profiles"
+                  : "No suggestions found",
+              style: TextStyle(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.5),
+                fontSize: 16,
+              ),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+          itemCount: profiles.length,
+          itemBuilder: (context, index) {
+            return _buildProfileCard(profiles[index]);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileCard(UserProfile profile) {
+    final profileService = Provider.of<ProfileService>(context);
+    final isShortlisted = profileService.isShortlisted(profile.id);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppStyles.cardShadow,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProfileDetailScreen(userId: profile.id),
+                  ),
+                );
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image Section
+                  Stack(
+                    children: [
+                      Image.network(
+                        ApiService.instance.resolveUrl(
+                          profile.photos.isNotEmpty ? profile.photos[0] : null,
+                        ),
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                      if (profile.isVerified)
+                        Positioned(
+                          top: 16,
+                          left: 16,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.verified,
+                              color: Colors.blue,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  // Details Section
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "${profile.name}, ${profile.age}",
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            Text(
+                              profile.income,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "${profile.occupation} • ${profile.education}",
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              profile.location,
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            _buildChip(profile.caste ?? "Mali"),
+                            const SizedBox(width: 8),
+                            _buildChip(profile.motherTongue),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                icon: Icon(
+                  isShortlisted ? Icons.favorite : Icons.favorite_border,
+                  color: isShortlisted ? Colors.red : Colors.white,
+                  size: 32,
+                ),
+                onPressed: () {
+                  profileService.toggleShortlist(profile.id);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.primary,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 

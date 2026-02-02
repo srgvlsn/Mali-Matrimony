@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_profile_model.dart';
 import '../models/interest_model.dart';
+import '../models/notification_model.dart';
+import '../models/user_analytics.dart';
 import '../utils/api_response.dart';
 import 'api_service.dart';
 
@@ -20,22 +23,41 @@ class BackendService {
     String? password,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({'phone': phone, 'password': password ?? ''}),
-      );
+      debugPrint('Attempting login for phone: $phone');
+      debugPrint('Backend URL: $_baseUrl/auth/login');
+
+      final response = await http
+          .post(
+            Uri.parse('$_baseUrl/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode({'phone': phone, 'password': password ?? ''}),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              debugPrint('Login request timed out');
+              throw Exception(
+                'Connection timeout - please check if backend is running',
+              );
+            },
+          );
+
+      debugPrint('Login response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final user = UserProfile.fromMap(data['data']);
         _currentUser = user;
+        debugPrint('Login successful for user: ${user.name}');
         return ApiResponse.success(user);
       } else {
         final Map<String, dynamic> errorData = json.decode(response.body);
-        return ApiResponse.error(errorData['detail'] ?? 'Login failed');
+        final errorMsg = errorData['detail'] ?? 'Login failed';
+        debugPrint('Login failed: $errorMsg');
+        return ApiResponse.error(errorMsg);
       }
     } catch (e) {
+      debugPrint('Login error: $e');
       return ApiResponse.error('Login failed: $e');
     }
   }
@@ -208,6 +230,27 @@ class BackendService {
     _currentUser = null;
   }
 
+  Future<ApiResponse<UserProfile>> getProfile(
+    String userId, {
+    String? viewerId,
+  }) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/profiles/$userId').replace(
+        queryParameters: viewerId != null ? {'viewer_id': viewerId} : null,
+      );
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return ApiResponse.success(UserProfile.fromMap(data['data']));
+      } else {
+        return ApiResponse.error('Failed to fetch profile');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to fetch profile: $e');
+    }
+  }
+
   Future<ApiResponse<List<UserProfile>>> getAllProfiles() async {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/profiles'));
@@ -366,6 +409,23 @@ class BackendService {
     return response;
   }
 
+  Future<ApiResponse<UserAnalytics>> getUserAnalytics(String userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/profiles/$userId/analytics'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return ApiResponse.success(UserAnalytics.fromMap(data['data']));
+      } else {
+        return ApiResponse.error('Failed to fetch analytics');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to fetch analytics: $e');
+    }
+  }
+
   // ==================== Interest API ====================
 
   Future<ApiResponse<void>> sendInterest(
@@ -480,6 +540,49 @@ class BackendService {
       }
     } catch (e) {
       return ApiResponse.error('Failed to fetch shortlisted profiles: $e');
+    }
+  }
+
+  // ==================== Notification API ====================
+
+  Future<ApiResponse<List<NotificationModel>>> getNotifications(
+    String userId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/notifications/$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> jsonList = data['data'];
+        final notifications = jsonList
+            .map((n) => NotificationModel.fromMap(n))
+            .toList();
+        return ApiResponse.success(notifications);
+      } else {
+        return ApiResponse.error('Failed to fetch notifications');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to fetch notifications: $e');
+    }
+  }
+
+  Future<ApiResponse<void>> markNotificationAsRead(
+    String notificationId,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/notifications/$notificationId/read'),
+      );
+
+      if (response.statusCode == 200) {
+        return ApiResponse.success(null);
+      } else {
+        return ApiResponse.error('Failed to mark notification as read');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to mark notification as read: $e');
     }
   }
 }

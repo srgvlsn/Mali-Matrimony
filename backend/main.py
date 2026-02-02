@@ -1,18 +1,61 @@
-from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
+from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile, Form, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict
 import uvicorn
 import os
 import shutil
 import uuid
+from datetime import datetime
 
 from . import models, schemas, database
 from .database import engine, get_db
 
 from passlib.context import CryptContext
 from pydantic import BaseModel
+
+# Create tables
+models.Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Mali Matrimony API")
+
+# Mount uploads directory to serve images
+os.makedirs("backend/uploads", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="backend/uploads"), name="uploads")
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# WebSocket Connection Manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, List[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, user_id: str):
+        await websocket.accept()
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = []
+        self.active_connections[user_id].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, user_id: str):
+        if user_id in self.active_connections:
+            self.active_connections[user_id].remove(websocket)
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
+
+    async def send_personal_message(self, message: dict, user_id: str):
+        if user_id in self.active_connections:
+            for connection in self.active_connections[user_id]:
+                await connection.send_json(message)
+
+manager = ConnectionManager()
 
 # Password hashing configuration
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -36,29 +79,19 @@ otp_store = {}
 
 # ... existing code ...
 
-# Create directories
-os.makedirs("backend/uploads", exist_ok=True)
-
-# Create tables
-models.Base.metadata.create_all(bind=engine)
-
-app = FastAPI(title="Mali Matrimony API")
-
-# Mount uploads directory to serve images
-app.mount("/uploads", StaticFiles(directory="backend/uploads"), name="uploads")
-
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Mali Matrimony API"}
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id)
 
 # ==================== User Auth API ====================
 
@@ -244,10 +277,35 @@ def get_all_profiles(db: Session = Depends(get_db)):
     )
 
 @app.get("/profiles/{user_id}", response_model=schemas.ApiResponse)
-def get_profile(user_id: str, db: Session = Depends(get_db)):
+async def get_profile(user_id: str, viewer_id: Optional[str] = None, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Profile not found")
+    
+    # If there's a viewer and they are not viewing their own profile
+    if viewer_id and viewer_id != user_id:
+        viewer = db.query(models.User).filter(models.User.id == viewer_id).first()
+        if viewer:
+            # Increment view count
+            user.view_count += 1
+            
+            # Create notification for the profile owner
+            new_notif = models.Notification(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                title="Profile Viewed",
+                message=f"{viewer.name} viewed your profile!",
+                type="profileView",
+                related_user_id=viewer_id
+            )
+            db.add(new_notif)
+            db.commit()
+            
+            # Push real-time update
+            await manager.send_personal_message(
+                {"type": "new_notification", "title": "Profile Viewed"},
+                user_id
+            )
     
     return schemas.ApiResponse(
         status="success",
@@ -255,13 +313,65 @@ def get_profile(user_id: str, db: Session = Depends(get_db)):
         data=schemas.UserResponse.model_validate(user).model_dump()
     )
 
+@app.get("/profiles/{user_id}/analytics", response_model=schemas.ApiResponse)
+async def get_user_analytics(user_id: str, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    interests_received = db.query(models.Interest).filter(
+        models.Interest.receiver_id == user_id,
+        models.Interest.status == "pending"
+    ).count()
+    
+    shortlisted_by = db.query(models.Shortlist).filter(
+        models.Shortlist.shortlisted_user_id == user_id
+    ).count()
+    
+    analytics = schemas.UserAnalytics(
+        total_views=user.view_count,
+        interests_received=interests_received,
+        shortlisted_by=shortlisted_by
+    )
+    
+    return schemas.ApiResponse(
+        status="success",
+        message="Analytics fetched",
+        data=analytics.model_dump()
+    )
+
 @app.put("/profiles/{user_id}", response_model=schemas.ApiResponse)
-def update_profile(user_id: str, user_update: schemas.UserBase, db: Session = Depends(get_db)):
+async def update_profile(user_id: str, user_update: schemas.UserBase, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="Profile not found")
     
     update_data = user_update.model_dump(exclude_unset=True)
+    
+    # Handle verification status changes
+    if 'is_verified' in update_data:
+        if update_data['is_verified'] and not db_user.is_verified:
+            # Create fresh notification on verification
+            new_notif = models.Notification(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                title="Profile Verified",
+                message="Congratulations! Your profile has been verified by the admin.",
+                type="system"
+            )
+            db.add(new_notif)
+            # Push real-time update
+            await manager.send_personal_message(
+                {"type": "new_notification", "title": "Profile Verified"},
+                user_id
+            )
+        elif not update_data['is_verified'] and db_user.is_verified:
+            # Revoke: Delete existing "Profile Verified" notifications
+            db.query(models.Notification).filter(
+                models.Notification.user_id == user_id,
+                models.Notification.title == "Profile Verified"
+            ).delete()
+
     for key, value in update_data.items():
         setattr(db_user, key, value)
     
@@ -273,14 +383,66 @@ def update_profile(user_id: str, user_update: schemas.UserBase, db: Session = De
         data=schemas.UserResponse.model_validate(db_user).model_dump()
     )
 
+# ==================== Notification API ====================
+
+@app.get("/notifications/{user_id}", response_model=schemas.ApiResponse)
+def get_user_notifications(user_id: str, db: Session = Depends(get_db)):
+    notifications = db.query(models.Notification).filter(
+        models.Notification.user_id == user_id
+    ).order_by(models.Notification.timestamp.desc()).all()
+    
+    notif_data = [schemas.NotificationResponse.model_validate(n).model_dump() for n in notifications]
+    return schemas.ApiResponse(
+        status="success",
+        message="Notifications fetched",
+        data=notif_data
+    )
+
+@app.put("/notifications/{notification_id}/read", response_model=schemas.ApiResponse)
+def mark_notification_read(notification_id: str, db: Session = Depends(get_db)):
+    notification = db.query(models.Notification).filter(models.Notification.id == notification_id).first()
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    
+    notification.is_read = True
+    db.commit()
+    return schemas.ApiResponse(
+        status="success",
+        message="Notification marked as read"
+    )
+
 # ==================== Interest API ====================
 
 @app.post("/interests", response_model=schemas.ApiResponse)
-def send_interest(interest: schemas.InterestCreate, db: Session = Depends(get_db)):
+async def send_interest(interest: schemas.InterestCreate, db: Session = Depends(get_db)):
+    # Check if user exists
+    receiver = db.query(models.User).filter(models.User.id == interest.receiver_id).first()
+    if not receiver:
+        raise HTTPException(status_code=404, detail="Receiver not found")
+
     new_interest = models.Interest(**interest.model_dump())
     db.add(new_interest)
+    
+    # Create notification for receiver
+    new_notif = models.Notification(
+        id=str(uuid.uuid4()),
+        user_id=interest.receiver_id,
+        title="New Interest Received",
+        message="Someone is interested in your profile!",
+        type="interestReceived",
+        related_user_id=interest.sender_id
+    )
+    db.add(new_notif)
+    
     db.commit()
     db.refresh(new_interest)
+    
+    # Push real-time update
+    await manager.send_personal_message(
+        {"type": "new_notification", "title": "New Interest Received"},
+        interest.receiver_id
+    )
+    
     return schemas.ApiResponse(
         status="success",
         message="Interest sent",
@@ -288,12 +450,32 @@ def send_interest(interest: schemas.InterestCreate, db: Session = Depends(get_db
     )
 
 @app.put("/interests/{interest_id}", response_model=schemas.ApiResponse)
-def update_interest_status(interest_id: str, status: str, db: Session = Depends(get_db)):
+async def update_interest_status(interest_id: str, status: str, db: Session = Depends(get_db)):
     interest = db.query(models.Interest).filter(models.Interest.id == interest_id).first()
     if not interest:
         raise HTTPException(status_code=404, detail="Interest not found")
     
+    old_status = interest.status
     interest.status = status
+    
+    if status == "accepted" and old_status != "accepted":
+        # Create notification for sender
+        new_notif = models.Notification(
+            id=str(uuid.uuid4()),
+            user_id=interest.sender_id,
+            title="Interest Accepted",
+            message="Your interest has been accepted!",
+            type="interestAccepted",
+            related_user_id=interest.receiver_id
+        )
+        db.add(new_notif)
+        
+        # Push real-time update to sender
+        await manager.send_personal_message(
+            {"type": "new_notification", "title": "Interest Accepted"},
+            interest.sender_id
+        )
+    
     db.commit()
     db.refresh(interest)
     return schemas.ApiResponse(
@@ -318,7 +500,7 @@ def get_user_interests(user_id: str, db: Session = Depends(get_db)):
 # ==================== Shortlist API ====================
 
 @app.post("/shortlists", response_model=schemas.ApiResponse)
-def toggle_shortlist(shortlist: schemas.ShortlistCreate, db: Session = Depends(get_db)):
+async def toggle_shortlist(shortlist: schemas.ShortlistCreate, db: Session = Depends(get_db)):
     existing = db.query(models.Shortlist).filter(
         models.Shortlist.user_id == shortlist.user_id,
         models.Shortlist.shortlisted_user_id == shortlist.shortlisted_user_id
@@ -327,12 +509,20 @@ def toggle_shortlist(shortlist: schemas.ShortlistCreate, db: Session = Depends(g
     if existing:
         db.delete(existing)
         db.commit()
-        return schemas.ApiResponse(status="success", message="Removed from shortlist")
+        msg = "Removed from shortlist"
     else:
         new_shortlist = models.Shortlist(**shortlist.model_dump())
         db.add(new_shortlist)
         db.commit()
-        return schemas.ApiResponse(status="success", message="Added to shortlist")
+        msg = "Added to shortlist"
+        
+    # Push real-time update to the owner (in case they have multiple devices)
+    await manager.send_personal_message(
+        {"type": "shortlist_updated"},
+        shortlist.user_id
+    )
+    
+    return schemas.ApiResponse(status="success", message=msg)
 
 @app.get("/shortlists/{user_id}", response_model=schemas.ApiResponse)
 def get_shortlisted_profiles(user_id: str, db: Session = Depends(get_db)):

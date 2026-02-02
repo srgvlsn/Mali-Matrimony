@@ -36,6 +36,33 @@ class NotificationModel {
       relatedUserId: relatedUserId ?? this.relatedUserId,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'message': message,
+      'timestamp': timestamp.toIso8601String(),
+      'type': type.name,
+      'is_read': isRead,
+      'related_user_id': relatedUserId,
+    };
+  }
+
+  static NotificationModel fromMap(Map<String, dynamic> map) {
+    return NotificationModel(
+      id: map['id'] as String,
+      title: map['title'] as String,
+      message: map['message'] as String,
+      timestamp: DateTime.parse(map['timestamp'] as String),
+      type: NotificationType.values.firstWhere(
+        (e) => e.name == map['type'],
+        orElse: () => NotificationType.system,
+      ),
+      isRead: map['is_read'] as bool? ?? false,
+      relatedUserId: map['related_user_id'] as String?,
+    );
+  }
 }
 
 enum NotificationType {

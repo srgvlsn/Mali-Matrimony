@@ -29,12 +29,25 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     _loadProfile();
   }
 
-  void _loadProfile() {
+  Future<void> _loadProfile() async {
+    // Initial load from local cache if available
     final result = ProfileService().getProfileById(widget.userId);
     if (result != null) {
-      profile = result;
-      isLoading = false;
-      isShortlisted = ProfileService.instance.isShortlisted(widget.userId);
+      setState(() {
+        profile = result;
+        isLoading = false;
+        isShortlisted = ProfileService.instance.isShortlisted(widget.userId);
+      });
+    }
+
+    // Refresh from backend to trigger "Profile Viewed" notification
+    final updated = await ProfileService().fetchProfile(widget.userId);
+    if (updated != null && mounted) {
+      setState(() {
+        profile = updated;
+        isLoading = false;
+        isShortlisted = ProfileService.instance.isShortlisted(widget.userId);
+      });
     }
   }
 

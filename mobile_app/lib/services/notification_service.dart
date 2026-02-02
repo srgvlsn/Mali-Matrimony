@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'dart:convert';
+import 'auth_service.dart';
+import 'interest_service.dart';
+import 'profile_service.dart';
 
 class NotificationService extends ChangeNotifier {
   final List<NotificationModel> _notifications = [];
 
   NotificationService() {
-    _initializeDemoNotifications();
+    fetchForCurrentUser();
   }
+
+  WebSocketChannel? _channel;
+  String? _lastSeenNotificationId;
 
   List<NotificationModel> get notifications =>
       List.unmodifiable(_notifications);
@@ -14,96 +22,148 @@ class NotificationService extends ChangeNotifier {
   int get unreadCount =>
       _notifications.where((notification) => !notification.isRead).length;
 
-  void _initializeDemoNotifications() {
-    // Demo notifications for UI demonstration (replace with backend integration)
-    _notifications.addAll([
-      NotificationModel(
-        id: '1',
-        title: 'New Match Found!',
-        message:
-            'You have a new match with Priya Sharma. Check out their profile!',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        type: NotificationType.newMatch,
-        relatedUserId: 'user_123',
-      ),
-      NotificationModel(
-        id: '2',
-        title: 'Profile View',
-        message: 'Rahul Kumar viewed your profile',
-        timestamp: DateTime.now().subtract(const Duration(hours: 5)),
-        type: NotificationType.profileView,
-        isRead: false,
-        relatedUserId: 'user_456',
-      ),
-      NotificationModel(
-        id: '3',
-        title: 'Interest Received',
-        message: 'Anjali Patel has shown interest in your profile',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-        type: NotificationType.interestReceived,
-        relatedUserId: 'user_789',
-      ),
-      NotificationModel(
-        id: '4',
-        title: 'Interest Accepted',
-        message: 'Congratulations! Kavya accepted your interest request',
-        timestamp: DateTime.now().subtract(const Duration(days: 2)),
-        type: NotificationType.interestAccepted,
-        isRead: true,
-        relatedUserId: 'user_101',
-      ),
-      NotificationModel(
-        id: '5',
-        title: 'System Update',
-        message:
-            'New features added! Check out our enhanced matching algorithm',
-        timestamp: DateTime.now().subtract(const Duration(days: 3)),
-        type: NotificationType.system,
-        isRead: true,
-      ),
-      NotificationModel(
-        id: '6',
-        title: 'New Message',
-        message:
-            'Siddharth Mali sent you a message: "I will be in Pune next weekend."',
-        timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-        type: NotificationType.message,
-        isRead: false,
-        relatedUserId: 'user_102',
-      ),
-      NotificationModel(
-        id: '7',
-        title: 'Profile Updated',
-        message: 'Neha Deshmukh has updated their profile photos',
-        timestamp: DateTime.now().subtract(const Duration(hours: 4)),
-        type: NotificationType.system,
-        isRead: false,
-        relatedUserId: 'user_103',
-      ),
-      NotificationModel(
-        id: '8',
-        title: 'New Shortlist',
-        message: 'A new user from Nashik has shortlisted your profile',
-        timestamp: DateTime.now().subtract(const Duration(hours: 12)),
-        type: NotificationType.profileView,
-        relatedUserId: 'user_103',
-      ),
-    ]);
+  bool get showIndicator {
+    if (_notifications.isEmpty) return false;
+    return _notifications.first.id != _lastSeenNotificationId &&
+        unreadCount > 0;
   }
 
-  void markAsRead(String notificationId) {
-    final index = _notifications.indexWhere((n) => n.id == notificationId);
-    if (index != -1) {
-      _notifications[index] = _notifications[index].copyWith(isRead: true);
+  void clearIndicator() {
+    if (_notifications.isNotEmpty) {
+      _lastSeenNotificationId = _notifications.first.id;
       notifyListeners();
     }
   }
 
-  void markAllAsRead() {
-    for (int i = 0; i < _notifications.length; i++) {
-      _notifications[i] = _notifications[i].copyWith(isRead: true);
+  Future<void> fetchForCurrentUser() async {
+    final user = AuthService.instance.currentUser;
+    if (user != null) {
+      await fetchNotifications(user.id);
+      _initWebSocket(user.id);
+    } else {
+      _notifications.clear();
+      _closeWebSocket();
+      notifyListeners();
     }
-    notifyListeners();
+  }
+
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 3;
+
+  void _initWebSocket(String userId) {
+    if (_channel != null) return; // Already connected
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      debugPrint('WebSocket: Max reconnect attempts reached, giving up');
+      return;
+    }
+
+    try {
+      final wsUrl = ApiService.instance.wsUrl;
+      // Clean the userId to remove any fragments
+      final cleanUserId = userId.split('#').first;
+      final uri = Uri.parse('$wsUrl/ws/$cleanUserId');
+
+      debugPrint(
+        'Connecting to WebSocket: $uri (attempt ${_reconnectAttempts + 1})',
+      );
+
+      _channel = WebSocketChannel.connect(uri);
+
+      // Reset attempts on successful connection
+      _channel!.ready
+          .then((_) {
+            debugPrint('WebSocket connected successfully');
+            _reconnectAttempts = 0;
+          })
+          .catchError((e) {
+            debugPrint('WebSocket connection failed: $e');
+            _channel = null;
+            _reconnectAttempts++;
+            // Don't auto-reconnect on connection failure
+          });
+
+      _channel!.stream.listen(
+        (message) {
+          try {
+            final data = json.decode(message);
+            if (data['type'] == 'new_notification') {
+              fetchNotifications(cleanUserId);
+              InterestService.instance.fetchInterests();
+              if (data['title'] == 'Profile Verified') {
+                AuthService.instance.refreshProfile();
+              }
+            } else if (data['type'] == 'shortlist_updated') {
+              ProfileService.instance.fetchProfiles();
+            }
+          } catch (e) {
+            debugPrint('Error parsing WebSocket message: $e');
+          }
+        },
+        onError: (error) {
+          debugPrint('WebSocket stream error: $error');
+          _channel = null;
+        },
+        onDone: () {
+          debugPrint('WebSocket closed');
+          _channel = null;
+          _reconnect(cleanUserId);
+        },
+        cancelOnError: true,
+      );
+    } catch (e) {
+      debugPrint('WebSocket init error: $e');
+      _channel = null;
+    }
+  }
+
+  void _reconnect(String userId) {
+    _channel = null;
+    _reconnectAttempts++;
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      debugPrint(
+        'WebSocket: Stopped reconnecting after $_maxReconnectAttempts attempts',
+      );
+      return;
+    }
+    Future.delayed(Duration(seconds: 10 * _reconnectAttempts), () {
+      final user = AuthService.instance.currentUser;
+      if (user != null && user.id == userId) {
+        _initWebSocket(userId);
+      }
+    });
+  }
+
+  void _closeWebSocket() {
+    _channel?.sink.close();
+    _channel = null;
+  }
+
+  Future<void> fetchNotifications(String userId) async {
+    final response = await BackendService.instance.getNotifications(userId);
+    if (response.success && response.data != null) {
+      _notifications.clear();
+      _notifications.addAll(response.data!);
+      notifyListeners();
+    }
+  }
+
+  Future<void> markAsRead(String notificationId) async {
+    final response = await BackendService.instance.markNotificationAsRead(
+      notificationId,
+    );
+    if (response.success) {
+      final index = _notifications.indexWhere((n) => n.id == notificationId);
+      if (index != -1) {
+        _notifications[index] = _notifications[index].copyWith(isRead: true);
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> markAllAsRead() async {
+    for (var notification in _notifications.where((n) => !n.isRead)) {
+      await markAsRead(notification.id);
+    }
   }
 
   void deleteNotification(String notificationId) {
@@ -126,5 +186,11 @@ class NotificationService extends ChangeNotifier {
       case NotificationType.system:
         return Icons.info;
     }
+  }
+
+  @override
+  void dispose() {
+    _closeWebSocket();
+    super.dispose();
   }
 }

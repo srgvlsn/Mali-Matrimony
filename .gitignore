@@ -29,3 +29,5 @@ backend/uploads/
 *.sqlite
 *.sqlite3
 
+# Local scripts
+start_backend.bat

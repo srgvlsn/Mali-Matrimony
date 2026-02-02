@@ -35,6 +35,7 @@ class User(Base):
     horoscope_image_url = Column(Text)
     is_verified = Column(Boolean, default=False)
     is_premium = Column(Boolean, default=False)
+    view_count = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Interest(Base):
@@ -49,6 +50,7 @@ class Interest(Base):
 class Shortlist(Base):
     __tablename__ = "shortlists"
 
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     shortlisted_user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -60,3 +62,15 @@ class Admin(Base):
     password_hash = Column(String, nullable=False)
     role = Column(String, default="superadmin")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    type = Column(String, nullable=False) # newMatch, profileView, message, interestReceived, interestAccepted, system
+    is_read = Column(Boolean, default=False)
+    related_user_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())

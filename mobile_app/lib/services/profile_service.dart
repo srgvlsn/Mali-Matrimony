@@ -9,6 +9,7 @@ class ProfileService extends ChangeNotifier {
 
   List<UserProfile> _profiles = [];
   Set<String> _shortlistedIds = {};
+  UserAnalytics? _analytics;
   bool _isLoading = false;
 
   List<UserProfile> get profiles {
@@ -18,6 +19,7 @@ class ProfileService extends ChangeNotifier {
   }
 
   Set<String> get shortlistedIds => _shortlistedIds;
+  UserAnalytics? get analytics => _analytics;
   bool get isLoading => _isLoading;
 
   /// Fetch profiles from PostgreSQL
@@ -43,8 +45,44 @@ class ProfileService extends ChangeNotifier {
       }
     }
 
+    await fetchAnalytics();
+
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> fetchAnalytics() async {
+    final currentUser = AuthService.instance.currentUser;
+    if (currentUser == null) return;
+
+    final response = await BackendService.instance.getUserAnalytics(
+      currentUser.id,
+    );
+    if (response.success) {
+      _analytics = response.data;
+      notifyListeners();
+    }
+  }
+
+  Future<UserProfile?> fetchProfile(String userId) async {
+    final curUser = AuthService.instance.currentUser;
+    final response = await BackendService.instance.getProfile(
+      userId,
+      viewerId: curUser?.id,
+    );
+
+    if (response.success && response.data != null) {
+      final updatedProfile = response.data!;
+      final index = _profiles.indexWhere((p) => p.id == updatedProfile.id);
+      if (index != -1) {
+        _profiles[index] = updatedProfile;
+      } else {
+        _profiles.add(updatedProfile);
+      }
+      notifyListeners();
+      return updatedProfile;
+    }
+    return null;
   }
 
   bool isShortlisted(String id) => _shortlistedIds.contains(id);
@@ -154,6 +192,18 @@ class ProfileService extends ChangeNotifier {
     if (response.success) {
       notifyListeners();
     }
+  }
+
+  bool _shouldHighlightBadge = false;
+  bool get shouldHighlightBadge => _shouldHighlightBadge;
+
+  void triggerBadgeHighlight() {
+    _shouldHighlightBadge = true;
+    notifyListeners();
+    Future.delayed(const Duration(seconds: 2), () {
+      _shouldHighlightBadge = false;
+      notifyListeners();
+    });
   }
 
   void refresh() {

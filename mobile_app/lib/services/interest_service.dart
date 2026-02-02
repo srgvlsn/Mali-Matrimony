@@ -24,6 +24,12 @@ class InterestService extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
 
+  int get unreadReceivedCount {
+    return receivedInterests
+        .where((i) => i.status == InterestStatus.pending)
+        .length;
+  }
+
   Future<void> fetchInterests() async {
     final curUser = AuthService.instance.currentUser;
     if (curUser == null) return;

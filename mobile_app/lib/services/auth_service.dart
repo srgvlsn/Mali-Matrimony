@@ -10,6 +10,11 @@ class AuthService extends ChangeNotifier {
   UserProfile? get currentUser => BackendService.instance.currentUser;
   bool get isLoggedIn => currentUser != null;
 
+  Future<void> refreshProfile() async {
+    await BackendService.instance.refreshCurrentUser();
+    notifyListeners();
+  }
+
   void refresh() {
     notifyListeners();
   }
