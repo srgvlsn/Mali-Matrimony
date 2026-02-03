@@ -35,89 +35,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      appBar: AppBar(
-        title: Text(
-          _getAppBarTitle(),
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          systemNavigationBarColor: Colors.transparent,
-          systemNavigationBarIconBrightness: Brightness.dark,
-        ),
-        actions: [
-          Consumer<NotificationService>(
-            builder: (context, notificationService, child) {
-              final unreadCount = notificationService.unreadCount;
-              return Stack(
-                children: [
-                  IconButton(
+      appBar: _selectedIndex == 1
+          ? null
+          : AppBar(
+              title: Text(
+                _getAppBarTitle(),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              surfaceTintColor: Colors.transparent,
+              scrolledUnderElevation: 0,
+              elevation: 0,
+              systemOverlayStyle: const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.dark,
+                systemNavigationBarColor: Colors.transparent,
+                systemNavigationBarIconBrightness: Brightness.dark,
+              ),
+              actions: [
+                Consumer<NotificationService>(
+                  builder: (context, notificationService, child) {
+                    final unreadCount = notificationService.unreadCount;
+                    return Stack(
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.notifications_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          onPressed: () {
+                            _showNotificationPopup(context);
+                          },
+                        ),
+                        if (notificationService.showIndicator)
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                unreadCount > 9 ? '9+' : '$unreadCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                if (_selectedIndex == 3) // Only on Profile Tab
+                  PopupMenuButton<String>(
                     icon: Icon(
-                      Icons.notifications_outlined,
+                      Icons.more_vert_rounded,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    onPressed: () {
-                      _showNotificationPopup(context);
-                    },
-                  ),
-                  if (notificationService.showIndicator)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 16,
-                          minHeight: 16,
-                        ),
-                        child: Text(
-                          unreadCount > 9 ? '9+' : '$unreadCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                ],
-              );
-            },
-          ),
-          if (_selectedIndex == 3) // Only on Profile Tab
-            PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert_rounded,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              onSelected: (value) {
-                // Implement functionality
-              },
-              itemBuilder: (context) => [
-                _buildPopupMenuItem(Icons.settings_outlined, "Settings"),
-                _buildPopupMenuItem(Icons.help_outline, "Help & Support"),
-                _buildPopupMenuItem(Icons.policy_outlined, "Privacy Policy"),
+                    onSelected: (value) {
+                      // Implement functionality
+                    },
+                    itemBuilder: (context) => [
+                      _buildPopupMenuItem(Icons.settings_outlined, "Settings"),
+                      _buildPopupMenuItem(Icons.help_outline, "Help & Support"),
+                      _buildPopupMenuItem(
+                        Icons.policy_outlined,
+                        "Privacy Policy",
+                      ),
+                    ],
+                  ),
+                const SizedBox(width: 8),
               ],
             ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: SafeArea(
         child: Container(

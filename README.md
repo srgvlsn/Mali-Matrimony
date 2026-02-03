@@ -27,6 +27,16 @@ flutter run -d chrome
 
 ## 📝 Change Log
 
+### Version 0.6.6 - 2026-02-03 22:02
+**Contributor**: Sreerag Valsan
+> - **Real-Time Badges**: Implemented WebSocket-driven unread indicators for Interests and Chats.
+> - **Home Hub**: Unified navigation by merging Matches into Home with Discover/Suggestions/Shortlisted tabs.
+> - **Analytics**: Launched "Profile Reach" dashboard on Home screen for user insights.
+> - **Stability**: Resolved Android emulator connectivity issues and switched to LAN IP fallback.
+> - **OTP Bug Fix**: Corrected navigation logic in OTP login to prevent "Empty Profile" issue.
+> - **UX Refinement**: Fixed duplicate Header/AppBar glitch on Interests Hub.
+> - **Data Cleanup**: Removed 100% of hardcoded mock data from services.
+
 ### Version 0.6.5 - 2026-02-02 18:28
 **Contributor**: Sreerag Valsan
 > - **Login Fix**: Added 10-second timeout and debug logging to prevent infinite loading.

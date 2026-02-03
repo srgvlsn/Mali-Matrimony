@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 import '../services/auth_service.dart';
 import 'register_step1_account.dart';
 import 'forgot_password_screen.dart';
@@ -37,12 +38,15 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    bool success = false;
 
     if (_useOtp) {
       if (!_otpSent) {
         // Request OTP
-        success = await _authService.requestOtp(_emailController.text.trim());
+        final success = await _authService.requestOtp(
+          _emailController.text.trim(),
+        );
+        setState(() => _isLoading = false);
+
         if (success) {
           setState(() => _otpSent = true);
           if (mounted) {
@@ -57,37 +61,42 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         // Verify OTP Login
-        success = await _authService.loginWithOtp(
+        final success = await _authService.loginWithOtp(
           _emailController.text.trim(),
           _otpController.text.trim(),
         );
-        if (!success) _showError("Invalid OTP");
+        setState(() => _isLoading = false);
+
+        if (success) {
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const DashboardScreen()),
+              (route) => false,
+            );
+          }
+        } else {
+          _showError("Invalid OTP");
+        }
       }
     } else {
       // Password Login
-      success = await _authService.loginWithPassword(
+      final error = await _authService.loginWithPassword(
         _emailController.text.trim(),
         _passwordController.text,
       );
-      if (!success) _showError("Invalid Phone or Password");
-    }
-
-    if (mounted) {
       setState(() => _isLoading = false);
-      if (success && (_useOtp ? _otpSent : true)) {
-        // If OTP flow, we only navigate if verification succeeded (which sets currentUser)
-        // Actually loginWithOtp returns true only on success.
-        // For Request OTP, success is true but we don't navigate yet.
-        if (_useOtp && !_otpSent) {
-          // Case: Request OTP success (handled above by setting _otpSent)
-        } else {
-          // Login Success
+
+      if (error == null) {
+        if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const DashboardScreen()),
             (route) => false,
           );
         }
+      } else {
+        _showError(error);
       }
     }
   }
@@ -95,7 +104,11 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showError(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text("$message\n(Target: ${ApiService.instance.baseUrl})"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
       );
     }
   }
@@ -117,12 +130,31 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          "Welcome",
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF820815),
+                        GestureDetector(
+                          onLongPress: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text("Debug Connection"),
+                                content: Text(
+                                  "API URL:\n${ApiService.instance.baseUrl}",
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text("OK"),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            "Welcome",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF820815),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 32),

@@ -83,6 +83,10 @@ otp_store = {}
 def read_root():
     return {"message": "Welcome to Mali Matrimony API"}
 
+@app.get("/ping")
+def ping():
+    return {"ping": "pong"}
+
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
     await manager.connect(websocket, user_id)

@@ -19,17 +19,17 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Login using Password
-  Future<bool> loginWithPassword(String phone, String password) async {
+  /// Login using Password - Returns null on success, error message on failure
+  Future<String?> loginWithPassword(String phone, String password) async {
     final response = await BackendService.instance.login(
       phone,
       password: password,
     );
     if (response.success) {
       notifyListeners();
-      return true;
+      return null;
     }
-    return false;
+    return response.message;
   }
 
   /// Request OTP

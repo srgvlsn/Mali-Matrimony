@@ -21,9 +21,9 @@ class ApiService {
         print('🌐 Running on Web - Using 127.0.0.1:8000');
       } else {
         // Running on mobile - check if Android or iOS
-        // For now, assume Android emulator
         String? envUrl = dotenv.env['API_URL'];
-        _baseUrl = envUrl ?? 'http://localhost:8000';
+        // Fallback to LAN IP (192.168.1.8) which is more reliable than 10.0.2.2 on some setups
+        _baseUrl = envUrl ?? 'http://192.168.1.8:8000';
         print('📱 Running on Mobile - Using: $_baseUrl');
       }
 

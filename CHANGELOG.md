@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.6] - 2026-02-03
+### Added
+- **Real-Time Notifications**: Implemented WebSockets for instant Interest, Chat, and Profile View alerts.
+- **Unified Home Hub**: Merged Discover, Suggestions, and Shortlisted into a single Home navigation tab with state-managed tabs.
+- **Profile Reach Dashboard**: Added real-time analytics for users to track profile views, interests, and shortlists on the Home screen.
+- **Unread Badges**: Implemented live badge counts on Navigation Bar for Interests and Chats.
+
+### Fixed
+- **Connectivity**: Resolved Android emulator connection timeouts by implementing LAN IP fallback and updating AndroidManifest.
+- **OTP Login**: Fixed navigation race condition that caused an empty profile page after OTP verification.
+- **UI Scaling**: Fixed duplicate AppBar/Header issues on the Interests Hub screen.
+- **Data Integrity**: Enforced strict non-null data handling in UserProfileScreen to prevent rendering crashes.
+
+### Removed
+- **Legacy Service Mocks**: Completely removed the last remaining hardcoded data from the mobile application services.
+
 ## [0.6.0] - 2026-02-02
 ### Added
 - **Security Hardening**: Implemented secure password hashing using **bcrypt** for standard user accounts.

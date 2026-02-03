@@ -184,7 +184,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         final profile = authService.currentUser;
 
         if (profile == null) {
-          return const Center(child: Text("Profile not found"));
+          return const Center(
+            child: Text(
+              "PROFILE IS NULL (Debug Mode)",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+          );
         }
 
         final completion = profile.completionPercentage;
@@ -771,7 +780,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
       ),
       subtitle: Text(
-        detail['value']!,
+        detail['value']?.toString() ?? 'N/A',
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
