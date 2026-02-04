@@ -4,6 +4,9 @@ import '../services/interest_service.dart';
 import '../services/profile_service.dart';
 import 'package:shared/shared.dart';
 import 'profile_detail_screen.dart';
+import 'payment_screen.dart';
+import '../services/auth_service.dart';
+import '../widgets/notification_badge.dart';
 
 class InterestsScreen extends StatelessWidget {
   const InterestsScreen({super.key});
@@ -23,6 +26,12 @@ class InterestsScreen extends StatelessWidget {
           scrolledUnderElevation: 0,
           foregroundColor: Theme.of(context).colorScheme.primary,
           surfaceTintColor: Colors.transparent,
+          actions: const [
+            Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: NotificationBadge(),
+            ),
+          ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(64),
             child: Container(
@@ -161,12 +170,23 @@ class _InterestCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: InkWell(
           onTap: () {
-            Navigator.push(
+            final authService = Provider.of<AuthService>(
               context,
-              MaterialPageRoute(
-                builder: (_) => ProfileDetailScreen(userId: profile.id),
-              ),
+              listen: false,
             );
+            if (authService.isPremiumUser) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProfileDetailScreen(userId: profile.id),
+                ),
+              );
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PaymentScreen()),
+              );
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -175,7 +195,9 @@ class _InterestCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 35,
                   backgroundImage: profile.photos.isNotEmpty
-                      ? NetworkImage(profile.photos[0])
+                      ? NetworkImage(
+                          ApiService.instance.resolveUrl(profile.photos[0]),
+                        )
                       : null,
                   child: profile.photos.isEmpty
                       ? const Icon(Icons.person)

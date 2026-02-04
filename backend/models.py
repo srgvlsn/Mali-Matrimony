@@ -40,6 +40,7 @@ class User(Base):
     show_email = Column(Boolean, default=True)
     view_count = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    premium_expiry_date = Column(DateTime(timezone=True), nullable=True)
 
 class Interest(Base):
     __tablename__ = "interests"
@@ -86,3 +87,5 @@ class ChatMessage(Base):
     text = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    attachment_url = Column(String, nullable=True)
+    attachment_type = Column(String, nullable=True)

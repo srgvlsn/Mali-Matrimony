@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.8] - 2026-02-04
+### Added
+- **Premium Experience Refinement**: Implemented a specialized "Premium Membership Active" notification with type-specific logic.
+- **Deep-Link System**: Added robust navigation logic from notifications to the Settings screen using top-level Navigator and synchronization delays.
+- **Visual Feedback**: Implemented a one-time scaling highlight animation for the Payment Info card in Settings to acknowledge upgrades.
+- **Profile Membership Badge**: Introduced live "Free" and "Premium" badges on the My Profile screen with real-time status updates.
+
+### Changed
+- **Profile Synchronization**: Replaced Age with detailed Date of Birth in profile views and ensured persistent field synchronization (Work Mode, Horoscope, etc.).
+- **Consolidated Notifications**: Centralized all notification display and navigation logic into the `NotificationBadge` widget, eliminating stale duplicates on the Dashboard.
+- **Enhanced Data Handling**: Standardized notification types (e.g., `profileVerified`) across backend, shared models, and mobile app for consistent behavior.
+
+### Fixed
+- **Navigation Reliability**: Resolved intermittent deep-link failures by using `rootNavigator: true` and 100ms sync delays.
+- **Technical Cleanup**: Removed exhaustive debug logging and fixed various syntax errors in the notification and profile modules.
+
 ## [0.6.7] - 2026-02-03
 ### Added
 - **Real-Time Chat**: Full backend integration for messaging using PostgreSQL storage.

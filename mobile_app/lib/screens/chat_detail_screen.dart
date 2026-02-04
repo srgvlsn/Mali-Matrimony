@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../services/chat_service.dart';
 import 'package:shared/shared.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:async';
 
 class ChatDetailScreen extends StatefulWidget {
   final Conversation conversation;
@@ -15,6 +18,9 @@ class ChatDetailScreen extends StatefulWidget {
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ImagePicker _picker = ImagePicker();
+  Timer? _typingTimer;
+  bool _isTyping = false;
 
   @override
   void initState() {
@@ -24,13 +30,50 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
         widget.conversation.otherUserId,
       );
     });
+    _messageController.addListener(_onTextChanged);
   }
 
   @override
   void dispose() {
+    _messageController.removeListener(_onTextChanged);
+    _typingTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (_messageController.text.isNotEmpty && !_isTyping) {
+      _isTyping = true;
+      context.read<ChatService>().sendTypingStatus(
+        widget.conversation.otherUserId,
+        true,
+      );
+    }
+
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(milliseconds: 1000), () {
+      if (_isTyping) {
+        _isTyping = false;
+        context.read<ChatService>().sendTypingStatus(
+          widget.conversation.otherUserId,
+          false,
+        );
+      }
+    });
+  }
+
+  Future<void> _pickAndSendImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      if (mounted) {
+        await context.read<ChatService>().sendImageMessage(
+          widget.conversation.otherUserId,
+          File(image.path),
+        );
+        _scrollToBottom();
+      }
+    }
   }
 
   void _sendMessage() {
@@ -71,18 +114,41 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             CircleAvatar(
               radius: 18,
               backgroundImage: NetworkImage(
-                widget.conversation.otherUserPhoto ??
-                    'https://via.placeholder.com/150',
+                ApiService.instance.resolveUrl(
+                  widget.conversation.otherUserPhoto ??
+                      'https://via.placeholder.com/150',
+                ),
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              widget.conversation.otherUserName,
-              style: const TextStyle(
-                color: AppStyles.primary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Consumer<ChatService>(
+              builder: (context, chatService, child) {
+                final isTyping = chatService.isUserTyping(
+                  widget.conversation.otherUserId,
+                );
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.conversation.otherUserName,
+                      style: const TextStyle(
+                        color: AppStyles.primary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (isTyping)
+                      const Text(
+                        "Typing...",
+                        style: TextStyle(
+                          color: AppStyles.primary,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -97,7 +163,6 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Trigger scroll to bottom on new messages
           WidgetsBinding.instance.addPostFrameCallback(
             (_) => _scrollToBottom(),
           );
@@ -148,13 +213,43 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             ),
           ],
         ),
-        child: Text(
-          msg.text,
-          style: TextStyle(
-            color: msg.isMe ? Colors.white : Colors.black87,
-            fontSize: 16,
+        child: _buildMessageContent(msg),
+      ),
+    );
+  }
+
+  Widget _buildMessageContent(ChatMessage msg) {
+    if (msg.attachmentUrl != null && msg.attachmentType == 'image') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              ApiService.instance.resolveUrl(msg.attachmentUrl!),
+              width: 150,
+              height: 150,
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
+          if (msg.text.isNotEmpty && msg.text != "Image") ...[
+            const SizedBox(height: 8),
+            Text(
+              msg.text,
+              style: TextStyle(
+                color: msg.isMe ? Colors.white : Colors.black87,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+    return Text(
+      msg.text,
+      style: TextStyle(
+        color: msg.isMe ? Colors.white : Colors.black87,
+        fontSize: 16,
       ),
     );
   }
@@ -165,6 +260,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
       decoration: const BoxDecoration(color: AppStyles.background),
       child: Row(
         children: [
+          IconButton(
+            icon: const Icon(Icons.attach_file, color: AppStyles.primary),
+            onPressed: _pickAndSendImage,
+          ),
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),

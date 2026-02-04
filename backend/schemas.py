@@ -34,6 +34,7 @@ class UserBase(BaseModel):
     is_hidden: bool = False
     show_phone: bool = True
     show_email: bool = True
+    premium_expiry_date: Optional[datetime] = None
 
     @field_validator('languages', 'photos', mode='before')
     @classmethod
@@ -122,6 +123,8 @@ class ChatMessageCreate(BaseModel):
     id: str
     receiver_id: str
     text: str
+    attachment_url: Optional[str] = None
+    attachment_type: Optional[str] = None
 
 class ChatMessageResponse(BaseModel):
     id: str
@@ -130,6 +133,8 @@ class ChatMessageResponse(BaseModel):
     text: str
     is_read: bool
     timestamp: datetime
+    attachment_url: Optional[str] = None
+    attachment_type: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 class ConversationResponse(BaseModel):

@@ -42,12 +42,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_useOtp) {
       if (!_otpSent) {
         // Request OTP
-        final success = await _authService.requestOtp(
+        final response = await _authService.requestOtp(
           _emailController.text.trim(),
         );
         setState(() => _isLoading = false);
 
-        if (success) {
+        if (response.success) {
           setState(() => _otpSent = true);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -57,17 +57,19 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
         } else {
-          _showError("Failed to send OTP. Check phone number.");
+          _showError(
+            response.message ?? "Failed to send OTP. Check phone number.",
+          );
         }
       } else {
         // Verify OTP Login
-        final success = await _authService.loginWithOtp(
+        final response = await _authService.loginWithOtp(
           _emailController.text.trim(),
           _otpController.text.trim(),
         );
         setState(() => _isLoading = false);
 
-        if (success) {
+        if (response.success) {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
@@ -76,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
         } else {
-          _showError("Invalid OTP");
+          _showError(response.message ?? "Invalid OTP");
         }
       }
     } else {

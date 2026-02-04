@@ -60,6 +60,7 @@ class UserProfile {
   final bool showPhone;
   final bool showEmail;
   final DateTime? createdAt;
+  final DateTime? premiumExpiryDate;
 
   UserProfile({
     required this.id,
@@ -95,6 +96,7 @@ class UserProfile {
     this.showPhone = true,
     this.showEmail = true,
     this.createdAt,
+    this.premiumExpiryDate,
   });
 
   UserProfile copyWith({
@@ -130,6 +132,7 @@ class UserProfile {
     bool? showPhone,
     bool? showEmail,
     DateTime? createdAt,
+    DateTime? premiumExpiryDate,
   }) {
     return UserProfile(
       id: this.id,
@@ -165,6 +168,7 @@ class UserProfile {
       showPhone: showPhone ?? this.showPhone,
       showEmail: showEmail ?? this.showEmail,
       createdAt: createdAt ?? this.createdAt,
+      premiumExpiryDate: premiumExpiryDate ?? this.premiumExpiryDate,
     );
   }
 
@@ -249,6 +253,7 @@ class UserProfile {
       'show_phone': showPhone,
       'show_email': showEmail,
       'created_at': createdAt?.toIso8601String(),
+      'premium_expiry_date': premiumExpiryDate?.toIso8601String(),
     };
   }
 
@@ -300,6 +305,9 @@ class UserProfile {
       showEmail: map['show_email'] as bool? ?? true,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'] as String)
+          : null,
+      premiumExpiryDate: map['premium_expiry_date'] != null
+          ? DateTime.tryParse(map['premium_expiry_date'] as String)
           : null,
     );
   }

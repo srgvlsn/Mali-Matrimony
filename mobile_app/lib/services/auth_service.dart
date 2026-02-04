@@ -9,6 +9,7 @@ class AuthService extends ChangeNotifier {
 
   UserProfile? get currentUser => BackendService.instance.currentUser;
   bool get isLoggedIn => currentUser != null;
+  bool get isPremiumUser => currentUser?.isPremium ?? false;
 
   Future<void> refreshProfile() async {
     await BackendService.instance.refreshCurrentUser();
@@ -33,19 +34,20 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Request OTP
-  Future<bool> requestOtp(String phone) async {
-    final response = await BackendService.instance.requestOtp(phone);
-    return response.success;
+  Future<ApiResponse<bool>> requestOtp(String phone) async {
+    return await BackendService.instance.requestOtp(phone);
   }
 
   /// Login using OTP
-  Future<bool> loginWithOtp(String phone, String otp) async {
+  Future<ApiResponse<UserProfile>> loginWithOtp(
+    String phone,
+    String otp,
+  ) async {
     final response = await BackendService.instance.verifyOtp(phone, otp);
     if (response.success) {
       notifyListeners();
-      return true;
     }
-    return false;
+    return response;
   }
 
   /// Registration using PostgreSQL

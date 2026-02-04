@@ -20,6 +20,7 @@ class UserEditDialog extends StatefulWidget {
 
 class _UserEditDialogState extends State<UserEditDialog> {
   final _formKey = GlobalKey<FormState>();
+  bool _isSaving = false;
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
@@ -48,6 +49,8 @@ class _UserEditDialogState extends State<UserEditDialog> {
   late Gender _selectedGender;
   late MaritalStatus _selectedMaritalStatus;
   late bool _isVerified;
+  late bool _isPremium;
+  late TextEditingController _premiumExpiryDateController;
 
   @override
   void initState() {
@@ -94,6 +97,12 @@ class _UserEditDialogState extends State<UserEditDialog> {
     _selectedGender = widget.user.gender;
     _selectedMaritalStatus = widget.user.maritalStatus;
     _isVerified = widget.user.isVerified;
+    _isPremium = widget.user.isPremium;
+    _premiumExpiryDateController = TextEditingController(
+      text:
+          widget.user.premiumExpiryDate?.toIso8601String().split('T').first ??
+          '',
+    );
   }
 
   @override
@@ -125,45 +134,64 @@ class _UserEditDialogState extends State<UserEditDialog> {
     super.dispose();
   }
 
-  void _saveChanges() {
+  Future<void> _saveChanges() async {
     if (_formKey.currentState!.validate()) {
-      final updatedUser = widget.user.copyWith(
-        name: _nameController.text,
-        phone: _phoneController.text,
-        email: _emailController.text,
-        age: int.tryParse(_ageController.text) ?? 25,
-        height: double.tryParse(_heightController.text) ?? 5.5,
-        gender: _selectedGender,
-        maritalStatus: _selectedMaritalStatus,
-        caste: _casteController.text,
-        subCaste: _subCasteController.text,
-        motherTongue: _motherTongueController.text,
-        education: _educationController.text,
-        occupation: _occupationController.text,
-        company: _companyController.text,
-        income: _incomeController.text,
-        location: _locationController.text,
-        fatherName: _fatherNameController.text,
-        motherName: _motherNameController.text,
-        siblings: int.tryParse(_siblingsController.text) ?? 0,
-        bio: _bioController.text,
-        partnerPreferences: _partnerPreferencesController.text,
-        isVerified: _isVerified,
-        languages: _languagesController.text
-            .split(',')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList(),
-        hometown: _hometownController.text.isEmpty
-            ? null
-            : _hometownController.text,
-        workMode: _workModeController.text.isEmpty
-            ? null
-            : _workModeController.text,
-      );
+      setState(() => _isSaving = true);
+      try {
+        final updatedUser = widget.user.copyWith(
+          name: _nameController.text,
+          phone: _phoneController.text,
+          email: _emailController.text,
+          age: int.tryParse(_ageController.text) ?? 25,
+          height: double.tryParse(_heightController.text) ?? 5.5,
+          gender: _selectedGender,
+          maritalStatus: _selectedMaritalStatus,
+          caste: _casteController.text,
+          subCaste: _subCasteController.text,
+          motherTongue: _motherTongueController.text,
+          education: _educationController.text,
+          occupation: _occupationController.text,
+          company: _companyController.text,
+          income: _incomeController.text,
+          location: _locationController.text,
+          fatherName: _fatherNameController.text,
+          motherName: _motherNameController.text,
+          siblings: int.tryParse(_siblingsController.text) ?? 0,
+          bio: _bioController.text,
+          partnerPreferences: _partnerPreferencesController.text,
+          isVerified: _isVerified,
+          isPremium: _isPremium,
+          premiumExpiryDate: _premiumExpiryDateController.text.isNotEmpty
+              ? DateTime.tryParse(_premiumExpiryDateController.text)
+              : null,
+          languages: _languagesController.text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList(),
+          hometown: _hometownController.text.isEmpty
+              ? null
+              : _hometownController.text,
+          workMode: _workModeController.text.isEmpty
+              ? null
+              : _workModeController.text,
+        );
 
-      AdminService.instance.updateUser(updatedUser);
-      Navigator.pop(context, true);
+        await AdminService.instance.updateUser(updatedUser);
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Error updating user: $e")));
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isSaving = false);
+        }
+      }
     }
   }
 
@@ -384,6 +412,22 @@ class _UserEditDialogState extends State<UserEditDialog> {
                         onChanged: (val) => setState(() => _isVerified = val),
                         activeThumbColor: AppStyles.primary,
                       ),
+                      const SizedBox(height: 24),
+                      _buildSectionTitle("Premium Status"),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text("Is Premium Member"),
+                        value: _isPremium,
+                        onChanged: (val) => setState(() => _isPremium = val),
+                        activeThumbColor: Colors.purple,
+                      ),
+                      if (_isPremium) ...[
+                        const SizedBox(height: 12),
+                        _buildTextField(
+                          "Premium Expiry Date (YYYY-MM-DD)",
+                          _premiumExpiryDateController,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -399,9 +443,18 @@ class _UserEditDialogState extends State<UserEditDialog> {
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
-                  onPressed: _saveChanges,
+                  onPressed: _isSaving ? null : _saveChanges,
                   style: AppStyles.primaryButtonStyle,
-                  child: const Text("Save Changes"),
+                  child: _isSaving
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text("Save Changes"),
                 ),
               ],
             ),

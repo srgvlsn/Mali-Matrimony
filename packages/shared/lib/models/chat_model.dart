@@ -5,6 +5,8 @@ class ChatMessage {
   final String text;
   final DateTime timestamp;
   final bool isMe;
+  final String? attachmentUrl;
+  final String? attachmentType;
 
   ChatMessage({
     required this.id,
@@ -13,6 +15,8 @@ class ChatMessage {
     required this.text,
     required this.timestamp,
     required this.isMe,
+    this.attachmentUrl,
+    this.attachmentType,
   });
 
   factory ChatMessage.fromMap(Map<String, dynamic> map, String currentUserId) {
@@ -23,6 +27,8 @@ class ChatMessage {
       text: map['text'],
       timestamp: DateTime.parse(map['timestamp']),
       isMe: map['sender_id'] == currentUserId,
+      attachmentUrl: map['attachment_url'],
+      attachmentType: map['attachment_type'],
     );
   }
 
@@ -33,6 +39,8 @@ class ChatMessage {
       'receiver_id': receiverId,
       'text': text,
       'timestamp': timestamp.toIso8601String(),
+      'attachment_url': attachmentUrl,
+      'attachment_type': attachmentType,
     };
   }
 }

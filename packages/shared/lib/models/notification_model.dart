@@ -71,5 +71,7 @@ enum NotificationType {
   message,
   interestReceived,
   interestAccepted,
+  premiumMembership,
+  profileVerified,
   system,
 }

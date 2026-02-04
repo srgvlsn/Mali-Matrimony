@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'dart:io';
 import 'package:shared/shared.dart';
 import 'auth_service.dart';
+import 'notification_service.dart';
 
 class ChatService extends ChangeNotifier {
   static final ChatService instance = ChatService._internal();
@@ -9,6 +11,7 @@ class ChatService extends ChangeNotifier {
 
   List<Conversation> _conversations = [];
   final Map<String, List<ChatMessage>> _messages = {};
+  final Set<String> _typingUsers = {};
   bool _isLoading = false;
 
   List<Conversation> get conversations => _conversations;
@@ -137,5 +140,72 @@ class ChatService extends ChangeNotifier {
     _conversations.insert(0, newConversation);
     notifyListeners();
     return newConversation;
+  }
+
+  void handleTypingEvent(Map<String, dynamic> data) {
+    final senderId = data['sender_id'];
+    final type = data['type'];
+    if (senderId == null) return;
+
+    if (type == 'typing_started') {
+      _typingUsers.add(senderId);
+    } else {
+      _typingUsers.remove(senderId);
+    }
+    notifyListeners();
+  }
+
+  bool isUserTyping(String userId) {
+    return _typingUsers.contains(userId);
+  }
+
+  void sendTypingStatus(String otherUserId, bool isTyping) {
+    try {
+      NotificationService.instance.sendTypingEvent(otherUserId, isTyping);
+    } catch (e) {
+      debugPrint("Error sending typing status: $e");
+    }
+  }
+
+  Future<ChatMessage?> sendImageMessage(
+    String otherUserId,
+    File imageFile,
+  ) async {
+    final user = AuthService.instance.currentUser;
+    if (user == null) return null;
+
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final fileName = imageFile.path.split('/').last;
+
+      final uploadResponse = await BackendService.instance.uploadChatAttachment(
+        bytes,
+        fileName,
+      );
+
+      if (!uploadResponse.success || uploadResponse.data == null) {
+        return null;
+      }
+      final attachmentUrl = uploadResponse.data!;
+
+      // Optimistic update for image? Maybe just wait for response to avoid complex local handling of pending images
+      // Or show a placeholder. For now, simple await.
+
+      final response = await BackendService.instance.sendChatMessage(
+        user.id,
+        otherUserId,
+        "Image",
+        attachmentUrl: attachmentUrl,
+        attachmentType: "image",
+      );
+
+      if (response.success && response.data != null) {
+        handleIncomingMessage(response.data!);
+        return response.data!;
+      }
+    } catch (e) {
+      debugPrint("Error sending image: $e");
+    }
+    return null;
   }
 }

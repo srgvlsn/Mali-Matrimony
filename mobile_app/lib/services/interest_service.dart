@@ -47,9 +47,9 @@ class InterestService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendInterest(String userId) async {
+  Future<bool> sendInterest(String userId) async {
     final curUser = AuthService.instance.currentUser;
-    if (curUser == null) return;
+    if (curUser == null) return false;
 
     final response = await BackendService.instance.sendInterest(
       curUser.id,
@@ -57,7 +57,9 @@ class InterestService extends ChangeNotifier {
     );
     if (response.success) {
       await fetchInterests(); // Refresh list after sending
+      return true;
     }
+    return false;
   }
 
   Future<void> updateInterestStatus(

@@ -49,7 +49,7 @@ class InterestModel {
       status: InterestStatus.values.firstWhere(
         (e) => e.name == (map['status'] as String),
       ),
-      timestamp: map['timestamp'] as DateTime,
+      timestamp: DateTime.parse(map['timestamp'] as String),
     );
   }
 }

@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/admin_service.dart';
+import '../services/admin_socket_service.dart';
 import 'package:shared/shared.dart';
 
 class VerificationScreen extends StatefulWidget {
@@ -11,11 +13,30 @@ class VerificationScreen extends StatefulWidget {
 
 class _VerificationScreenState extends State<VerificationScreen> {
   List<UserProfile> _pendingUsers = [];
+  StreamSubscription? _socketSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+
+    // Listen for real-time events via stream
+    _socketSubscription = AdminSocketService.instance.eventStream.listen((
+      event,
+    ) {
+      if (!mounted) return;
+
+      // Verification status changes often trigger a profile_updated event
+      if (event.type == 'profile_updated') {
+        _loadData();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _socketSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -71,55 +92,42 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: AppStyles.cardShadow,
                   ),
-                  child: Row(
-                    children: [
-                      // Avatar
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.grey[200],
-                        backgroundImage: user.photos.isNotEmpty
-                            ? NetworkImage(
-                                ApiService.instance.resolveUrl(user.photos[0]),
-                              )
-                            : null,
-                        child: user.photos.isEmpty
-                            ? const Icon(Icons.person, color: Colors.grey)
-                            : null,
-                      ),
-                      const SizedBox(width: 20),
-                      // Details
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                  child: LayoutBuilder(
+                    builder: (context, cardConstraints) {
+                      final bool isNarrow = cardConstraints.maxWidth < 600;
+
+                      final detailsWidget = Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "${user.age} yrs • ${user.occupation} • ${user.location}",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                              ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "${user.age} yrs • ${user.occupation} • ${user.location}",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Caste: ${user.caste} (${user.subCaste})",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                              ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Caste: ${user.caste} (${user.subCaste})",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
                             ),
-                          ],
-                        ),
-                      ),
-                      // Actions
-                      Row(
+                          ),
+                        ],
+                      );
+
+                      final actionsContent = Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
                         children: [
                           OutlinedButton.icon(
                             onPressed: () async {
@@ -133,12 +141,15 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             ),
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Colors.red),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(100),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
                           ElevatedButton.icon(
                             onPressed: () async {
                               await AdminService.instance.verifyUser(user.id);
@@ -157,14 +168,77 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(100),
                               ),
                             ),
                           ),
                         ],
-                      ),
-                    ],
+                      );
+
+                      if (isNarrow) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 30,
+                                  backgroundColor: Colors.grey[200],
+                                  backgroundImage: user.photos.isNotEmpty
+                                      ? NetworkImage(
+                                          ApiService.instance.resolveUrl(
+                                            user.photos[0],
+                                          ),
+                                        )
+                                      : null,
+                                  child: user.photos.isEmpty
+                                      ? const Icon(
+                                          Icons.person,
+                                          color: Colors.grey,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(child: detailsWidget),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                            actionsContent,
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          // Avatar
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.grey[200],
+                            backgroundImage: user.photos.isNotEmpty
+                                ? NetworkImage(
+                                    ApiService.instance.resolveUrl(
+                                      user.photos[0],
+                                    ),
+                                  )
+                                : null,
+                            child: user.photos.isEmpty
+                                ? const Icon(Icons.person, color: Colors.grey)
+                                : null,
+                          ),
+                          const SizedBox(width: 20),
+                          // Details
+                          Expanded(child: detailsWidget),
+                          const SizedBox(width: 20),
+                          // Actions
+                          actionsContent,
+                        ],
+                      );
+                    },
                   ),
                 );
               },

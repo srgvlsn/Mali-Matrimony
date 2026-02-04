@@ -8,9 +8,18 @@ import 'profile_service.dart';
 import 'chat_service.dart';
 
 class NotificationService extends ChangeNotifier {
+  static NotificationService? _instance;
+  static NotificationService get instance {
+    if (_instance == null) {
+      throw Exception('NotificationService not initialized');
+    }
+    return _instance!;
+  }
+
   final List<NotificationModel> _notifications = [];
 
   NotificationService() {
+    _instance = this;
     fetchForCurrentUser();
   }
 
@@ -90,6 +99,7 @@ class NotificationService extends ChangeNotifier {
             if (data['type'] == 'new_notification') {
               fetchNotifications(cleanUserId);
               InterestService.instance.fetchInterests();
+              ProfileService.instance.fetchAnalytics();
               if (data['title'] == 'Profile Verified') {
                 AuthService.instance.refreshProfile();
               }
@@ -98,6 +108,13 @@ class NotificationService extends ChangeNotifier {
               ChatService.instance.handleIncomingMessage(chatMsg);
             } else if (data['type'] == 'shortlist_updated') {
               ProfileService.instance.fetchProfiles();
+              ProfileService.instance.fetchAnalytics();
+            } else if (data['type'] == 'profile_updated') {
+              AuthService.instance.refreshProfile();
+              ProfileService.instance.fetchAnalytics();
+            } else if (data['type'] == 'typing_started' ||
+                data['type'] == 'typing_stopped') {
+              ChatService.instance.handleTypingEvent(data);
             }
           } catch (e) {
             debugPrint('Error parsing WebSocket message: $e');
@@ -140,6 +157,16 @@ class NotificationService extends ChangeNotifier {
   void _closeWebSocket() {
     _channel?.sink.close();
     _channel = null;
+  }
+
+  void sendTypingEvent(String receiverId, bool isTyping) {
+    if (_channel != null) {
+      final message = json.encode({
+        'type': isTyping ? 'typing_started' : 'typing_stopped',
+        'receiver_id': receiverId,
+      });
+      _channel!.sink.add(message);
+    }
   }
 
   Future<void> fetchNotifications(String userId) async {
@@ -187,6 +214,10 @@ class NotificationService extends ChangeNotifier {
         return Icons.thumb_up;
       case NotificationType.interestAccepted:
         return Icons.check_circle;
+      case NotificationType.premiumMembership:
+        return Icons.workspace_premium;
+      case NotificationType.profileVerified:
+        return Icons.verified_user;
       case NotificationType.system:
         return Icons.info;
     }

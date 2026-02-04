@@ -15,6 +15,10 @@ class BackendService {
 
   UserProfile? _currentUser;
 
+  void updateCurrentUserLocally(UserProfile user) {
+    _currentUser = user;
+  }
+
   String get _baseUrl => ApiService.instance.baseUrl;
 
   // ==================== Auth API ====================
@@ -600,7 +604,11 @@ class BackendService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        return ApiResponse.success(UserProfile.fromMap(data['data']));
+        final updatedProfile = UserProfile.fromMap(data['data']);
+        if (_currentUser?.id == updatedProfile.id) {
+          _currentUser = updatedProfile;
+        }
+        return ApiResponse.success(updatedProfile);
       } else {
         return ApiResponse.error('Failed to update settings');
       }
@@ -676,8 +684,10 @@ class BackendService {
   Future<ApiResponse<ChatMessage>> sendChatMessage(
     String senderId,
     String receiverId,
-    String text,
-  ) async {
+    String text, {
+    String? attachmentUrl,
+    String? attachmentType,
+  }) async {
     try {
       final msgId = 'msg_${DateTime.now().millisecondsSinceEpoch}';
       final uri = Uri.parse(
@@ -691,6 +701,8 @@ class BackendService {
           'id': msgId,
           'receiver_id': receiverId,
           'text': text,
+          'attachment_url': attachmentUrl,
+          'attachment_type': attachmentType,
         }),
       );
 
@@ -702,6 +714,33 @@ class BackendService {
       }
     } catch (e) {
       return ApiResponse.error('Failed to send message: $e');
+    }
+  }
+
+  Future<ApiResponse<String>> uploadChatAttachment(
+    List<int> bytes,
+    String filename,
+  ) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/chat/upload'),
+      );
+      request.files.add(
+        http.MultipartFile.fromBytes('file', bytes, filename: filename),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return ApiResponse.success(data['data']['url']);
+      } else {
+        return ApiResponse.error('Failed to upload attachment');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to upload attachment: $e');
     }
   }
 }

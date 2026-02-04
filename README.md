@@ -27,6 +27,13 @@ flutter run -d chrome
 
 ## 📝 Change Log
 
+### Version 0.6.8 - 2026-02-04 14:35
+**Contributor**: Sreerag Valsan
+> - **Premium Experience**: Specialized upgrade notifications, robust deep-linking to Settings, and highlight animations.
+> - **Profile Sync**: Implemented live Membership Badges and improved Date-of-Birth/Field persistence.
+> - **Code Health**: Consolidated notification logic into `NotificationBadge` and removed debug logging.
+> - **Stability**: Fixed deep-link race conditions using `rootNavigator` and synchronization delays.
+
 ### Version 0.6.6 - 2026-02-03 22:02
 **Contributor**: Sreerag Valsan
 > - **Real-Time Badges**: Implemented WebSocket-driven unread indicators for Interests and Chats.

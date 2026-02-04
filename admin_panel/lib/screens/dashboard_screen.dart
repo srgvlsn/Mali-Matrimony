@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/admin_service.dart';
+import '../services/admin_socket_service.dart';
 import 'package:shared/shared.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -11,11 +13,46 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   late Future<Map<String, dynamic>> _analyticsFuture;
+  StreamSubscription? _socketSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadAnalytics();
+
+    // Listen for real-time events to refresh analytics
+    _socketSubscription = AdminSocketService.instance.eventStream.listen((
+      event,
+    ) {
+      if (!mounted) return;
+
+      // Refresh on any event that affects dashboard metrics
+      _loadAnalytics();
+
+      if (event.type == 'payment_completed') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Premium upgrade detected: ${event.userName}. Analytics updated.",
+            ),
+            backgroundColor: AppStyles.primary,
+          ),
+        );
+      } else if (event.type == 'user_registered') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("New Registration: ${event.userName}"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _socketSubscription?.cancel();
+    super.dispose();
   }
 
   void _loadAnalytics() {
@@ -70,62 +107,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
               final analytics = snapshot.data ?? {};
 
-              return Column(
+              return Wrap(
+                spacing: 24,
+                runSpacing: 24,
                 children: [
-                  Row(
-                    children: [
-                      _buildStatCard(
-                        context,
-                        "Total Users",
-                        "${analytics['total_users'] ?? 0}",
-                        Icons.people,
-                        Colors.blue,
-                      ),
-                      const SizedBox(width: 24),
-                      _buildStatCard(
-                        context,
-                        "Verified Users",
-                        "${analytics['verified_users'] ?? 0}",
-                        Icons.verified,
-                        Colors.green,
-                      ),
-                      const SizedBox(width: 24),
-                      _buildStatCard(
-                        context,
-                        "Premium Users",
-                        "${analytics['premium_users'] ?? 0}",
-                        Icons.star,
-                        Colors.purple,
-                      ),
-                    ],
+                  _buildStatCard(
+                    context,
+                    "Total Users",
+                    "${analytics['total_users'] ?? 0}",
+                    Icons.people,
+                    Colors.blue,
                   ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      _buildStatCard(
-                        context,
-                        "Pending Verification",
-                        "${analytics['pending_verification'] ?? 0}",
-                        Icons.pending_actions,
-                        Colors.orange,
-                      ),
-                      const SizedBox(width: 24),
-                      _buildStatCard(
-                        context,
-                        "Recent (7 days)",
-                        "${analytics['recent_registrations'] ?? 0}",
-                        Icons.new_releases,
-                        Colors.teal,
-                      ),
-                      const SizedBox(width: 24),
-                      _buildStatCard(
-                        context,
-                        "Gender Ratio",
-                        "${analytics['male_users'] ?? 0}M / ${analytics['female_users'] ?? 0}F",
-                        Icons.people_outline,
-                        Colors.indigo,
-                      ),
-                    ],
+                  _buildStatCard(
+                    context,
+                    "Verified Users",
+                    "${analytics['verified_users'] ?? 0}",
+                    Icons.verified,
+                    Colors.green,
+                  ),
+                  _buildStatCard(
+                    context,
+                    "Premium Users",
+                    "${analytics['premium_users'] ?? 0}",
+                    Icons.star,
+                    Colors.purple,
+                  ),
+                  _buildStatCard(
+                    context,
+                    "Pending Verification",
+                    "${analytics['pending_verification'] ?? 0}",
+                    Icons.pending_actions,
+                    Colors.orange,
+                  ),
+                  _buildStatCard(
+                    context,
+                    "Recent (7 days)",
+                    "${analytics['recent_registrations'] ?? 0}",
+                    Icons.new_releases,
+                    Colors.teal,
+                  ),
+                  _buildStatCard(
+                    context,
+                    "Gender Ratio",
+                    "${analytics['male_users'] ?? 0}M / ${analytics['female_users'] ?? 0}F",
+                    Icons.people_outline,
+                    Colors.indigo,
                   ),
                 ],
               );
@@ -143,51 +169,50 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     IconData icon,
     Color color,
   ) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: AppStyles.cardShadow,
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(icon, color: color, size: 32),
+    return Container(
+      constraints: const BoxConstraints(minWidth: 280, maxWidth: 350),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppStyles.cardShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
             ),
-            const SizedBox(width: 24),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+            child: Icon(icon, color: color, size: 32),
+          ),
+          const SizedBox(width: 24),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: AppStyles.primary,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: AppStyles.primary,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

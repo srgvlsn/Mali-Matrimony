@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/profile_service.dart';
 import '../services/media_service.dart';
 import 'settings_screen.dart';
+import 'payment_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -163,6 +164,54 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ElevatedButton(
               onPressed: () async {
                 final updated = profile.copyWith(maritalStatus: selectedStatus);
+                await context.read<ProfileService>().updateProfile(updated);
+                if (context.mounted) {
+                  context.read<AuthService>().refresh();
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editWorkMode(UserProfile profile) {
+    String selectedMode = profile.workMode ?? "Office";
+    final modes = ["Office", "Remote", "Hybrid"];
+
+    // Ensure initial value is valid
+    if (!modes.contains(selectedMode)) {
+      selectedMode = modes.first;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text("Edit Work Mode"),
+          content: DropdownButtonFormField<String>(
+            initialValue: selectedMode,
+            items: modes.map((mode) {
+              return DropdownMenuItem(value: mode, child: Text(mode));
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                setDialogState(() => selectedMode = val);
+              }
+            },
+            decoration: const InputDecoration(labelText: "Work Mode"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final updated = profile.copyWith(workMode: selectedMode);
                 await context.read<ProfileService>().updateProfile(updated);
                 if (context.mounted) {
                   context.read<AuthService>().refresh();
@@ -358,24 +407,38 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               _buildDetailSection("Personal Details", [
                 {"label": "Gender", "value": profile.gender.name.toUpperCase()},
                 {
-                  "label": "Age",
-                  "value": "${profile.age} yrs",
-                  "onEdit": () => _editField(
-                    "Age",
-                    "Age (years)",
-                    profile.age.toString(),
-                    (val) async {
-                      final age = int.tryParse(val);
-                      if (age != null) {
-                        final updated = profile.copyWith(age: age);
-                        await context.read<ProfileService>().updateProfile(
-                          updated,
-                        );
-                        authService.refresh();
-                      }
-                    },
-                    keyboardType: TextInputType.number,
-                  ),
+                  "label": "Date of Birth",
+                  "value": profile.dob != null
+                      ? DateFormatter.formatShortDate(profile.dob!)
+                      : "Not set",
+                  "onEdit": () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: profile.dob ?? DateTime(2000),
+                      firstDate: DateTime(1970),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) {
+                      final updated = profile.copyWith(dob: date);
+                      // Recalculate Age? Backend/Model usually handles this derived field,
+                      // but for now we trust the model's age calc or pass it if needed.
+                      // Actually UserProfile has 'age' field. We should probably update that too or let backend do it.
+                      // Simple fix: Update DOB. Backend should recalc age if it stores it.
+                      // The app logic calc age from DOB usually.
+                      // Let's check UserProfile.fromMap - it reads 'age'.
+                      // We'll update DOB and Age.
+                      final now = DateTime.now();
+                      final age = now.year - date.year;
+
+                      final updatedWithAge = updated.copyWith(age: age);
+
+                      if (!context.mounted) return;
+                      await context.read<ProfileService>().updateProfile(
+                        updatedWithAge,
+                      );
+                      authService.refresh();
+                    }
+                  },
                 },
                 {
                   "label": "Hometown",
@@ -520,18 +583,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 {
                   "label": "Work Mode",
                   "value": profile.workMode ?? "Office",
-                  "onEdit": () => _editField(
-                    "Work Mode",
-                    "Office/WFH/Hybrid",
-                    profile.workMode ?? "Office",
-                    (val) async {
-                      final updated = profile.copyWith(workMode: val);
-                      await context.read<ProfileService>().updateProfile(
-                        updated,
-                      );
-                      authService.refresh();
-                    },
-                  ),
+                  "onEdit": () => _editWorkMode(profile),
                 },
               ]),
               const SizedBox(height: 24),
@@ -716,6 +768,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               color: Color(0xFF820815),
             ),
           ),
+          const SizedBox(height: 8),
+          _buildMembershipBadge(profile),
           if (showProgress) ...[
             const SizedBox(height: 8),
             Text(
@@ -726,16 +780,81 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-          ] else
-            const Text(
-              "Premium Member",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.green,
-                fontWeight: FontWeight.w600,
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMembershipBadge(UserProfile profile) {
+    final bool isPremium = profile.isPremium;
+
+    return GestureDetector(
+      onTap: () {
+        if (isPremium) {
+          // No direct push to SettingsScreen because it's usually
+          // already in the navigation stack or reached via a button below.
+          // However, for consistency with the request, we'll push it.
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SettingsScreen(highlightMembership: true),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PaymentScreen()),
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isPremium
+              ? LinearGradient(
+                  colors: [Colors.amber[700]!, Colors.orange[800]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : LinearGradient(
+                  colors: [Colors.grey[400]!, Colors.grey[600]!],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          borderRadius: BorderRadius.circular(100),
+          boxShadow: [
+            BoxShadow(
+              color: (isPremium ? Colors.orange : Colors.grey).withValues(
+                alpha: 0.3,
+              ),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isPremium ? Icons.stars : Icons.star_border,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              isPremium ? "PREMIUM MEMBER" : "FREE MEMBER",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
               ),
             ),
-        ],
+            const SizedBox(width: 4),
+            const Icon(Icons.chevron_right, color: Colors.white70, size: 16),
+          ],
+        ),
       ),
     );
   }
@@ -1023,7 +1142,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              MaterialPageRoute(builder: (_) => SettingsScreen()),
             );
           },
           icon: const Icon(Icons.settings_outlined),

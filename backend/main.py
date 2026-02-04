@@ -18,7 +18,7 @@ from pydantic import BaseModel
 # Create tables
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Mali Matrimony API", version="0.6.7")
+app = FastAPI(title="Mali Matrimony API", version="0.6.8")
 
 # Mount uploads directory to serve images
 os.makedirs("backend/uploads", exist_ok=True)
@@ -37,23 +37,56 @@ app.add_middleware(
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, List[WebSocket]] = {}
+        self.admin_connections: List[WebSocket] = []
 
     async def connect(self, websocket: WebSocket, user_id: str):
         await websocket.accept()
-        if user_id not in self.active_connections:
-            self.active_connections[user_id] = []
-        self.active_connections[user_id].append(websocket)
+        if user_id.startswith("admin_"):
+            self.admin_connections.append(websocket)
+        else:
+            if user_id not in self.active_connections:
+                self.active_connections[user_id] = []
+            self.active_connections[user_id].append(websocket)
 
     def disconnect(self, websocket: WebSocket, user_id: str):
-        if user_id in self.active_connections:
-            self.active_connections[user_id].remove(websocket)
-            if not self.active_connections[user_id]:
-                del self.active_connections[user_id]
+        if user_id.startswith("admin_"):
+            if websocket in self.admin_connections:
+                self.admin_connections.remove(websocket)
+        else:
+            if user_id in self.active_connections:
+                self.active_connections[user_id].remove(websocket)
+                if not self.active_connections[user_id]:
+                    del self.active_connections[user_id]
+
+    async def broadcast_to_admins(self, message: dict):
+        to_remove = []
+        for connection in self.admin_connections:
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                print(f"Error broadcasting to admin: {e}")
+                to_remove.append(connection)
+        
+        for conn in to_remove:
+            if conn in self.admin_connections:
+                self.admin_connections.remove(conn)
 
     async def send_personal_message(self, message: dict, user_id: str):
         if user_id in self.active_connections:
+            to_remove = []
             for connection in self.active_connections[user_id]:
-                await connection.send_json(message)
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    print(f"Error sending to user {user_id}: {e}")
+                    to_remove.append(connection)
+            
+            for conn in to_remove:
+                if conn in self.active_connections[user_id]:
+                    self.active_connections[user_id].remove(conn)
+            
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
 
 manager = ConnectionManager()
 
@@ -87,13 +120,30 @@ def read_root():
 def ping():
     return {"ping": "pong"}
 
+
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
     await manager.connect(websocket, user_id)
+    
+    # Notify others that user is online (Optimization: Broadcast only to relevant users in future)
+    # For now, we skip broad 'online' broadcast to avoid noise, 
+    # relying on specific status checks or implement if requested.
+    
     try:
         while True:
-            # Keep connection alive
-            await websocket.receive_text()
+            # Expect JSON messages for events like typing
+            data = await websocket.receive_json()
+            
+            # Handle Typing Events
+            if data.get('type') in ['typing_started', 'typing_stopped']:
+                receiver_id = data.get('receiver_id')
+                if receiver_id:
+                    # Forward the event to the receiver
+                    await manager.send_personal_message({
+                        "type": data['type'],
+                        "sender_id": user_id
+                    }, receiver_id)
+                    
     except WebSocketDisconnect:
         manager.disconnect(websocket, user_id)
 
@@ -180,7 +230,7 @@ def admin_login(creds: schemas.AdminLogin, db: Session = Depends(get_db)):
 # ==================== User Auth API ====================
 
 @app.post("/auth/register", response_model=schemas.ApiResponse)
-def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+async def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.id == user.id).first()
     if db_user:
         raise HTTPException(status_code=400, detail="User already registered")
@@ -195,6 +245,14 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+        
+        # Notify Admins: Real-time user registration
+        await manager.broadcast_to_admins({
+            "type": "user_registered",
+            "user_id": new_user.id,
+            "user_name": new_user.name,
+            "timestamp": datetime.now().isoformat()
+        })
         
         return schemas.ApiResponse(
             status="success",
@@ -361,7 +419,7 @@ async def update_profile(user_id: str, user_update: schemas.UserBase, db: Sessio
                 user_id=user_id,
                 title="Profile Verified",
                 message="Congratulations! Your profile has been verified by the admin.",
-                type="system"
+                type="profileVerified"
             )
             db.add(new_notif)
             # Push real-time update
@@ -376,11 +434,49 @@ async def update_profile(user_id: str, user_update: schemas.UserBase, db: Sessio
                 models.Notification.title == "Profile Verified"
             ).delete()
 
+    # Handle premium membership changes
+    if 'is_premium' in update_data:
+        if update_data['is_premium'] and not db_user.is_premium:
+            # User upgraded to premium
+            new_notif = models.Notification(
+                id=str(uuid.uuid4()),
+                user_id=user_id,
+                title="Premium Membership Active",
+                message="You are a premium member now.... enjoy.....",
+                type="premiumMembership"
+            )
+            db.add(new_notif)
+            # Push real-time update
+            await manager.send_personal_message(
+                {"type": "new_notification", "title": "Premium Membership Active"},
+                user_id
+            )
+            
+            # Notify admins
+            await manager.broadcast_to_admins({
+                "type": "payment_completed",
+                "user_id": user_id,
+                "user_name": db_user.name,
+                "timestamp": datetime.now().isoformat()
+            })
+
     for key, value in update_data.items():
         setattr(db_user, key, value)
     
     db.commit()
     db.refresh(db_user)
+
+    # Universal Real-Time Sync: Notify the user and all admins
+    await manager.send_personal_message(
+        {"type": "profile_updated", "user_id": user_id},
+        user_id
+    )
+    await manager.broadcast_to_admins({
+        "type": "profile_updated",
+        "user_id": user_id,
+        "user_name": db_user.name
+    })
+
     return schemas.ApiResponse(
         status="success",
         message="Profile updated",
@@ -474,11 +570,19 @@ async def send_interest(interest: schemas.InterestCreate, db: Session = Depends(
     db.commit()
     db.refresh(new_interest)
     
-    # Push real-time update
+    # Push real-time update to receiver
     await manager.send_personal_message(
         {"type": "new_notification", "title": "New Interest Received"},
         interest.receiver_id
     )
+    
+    # Notify Admins: Real-time interaction log
+    await manager.broadcast_to_admins({
+        "type": "interest_sent",
+        "sender_id": interest.sender_id,
+        "receiver_id": interest.receiver_id,
+        "timestamp": datetime.now().isoformat()
+    })
     
     return schemas.ApiResponse(
         status="success",
@@ -512,6 +616,14 @@ async def update_interest_status(interest_id: str, status: str, db: Session = De
             {"type": "new_notification", "title": "Interest Accepted"},
             interest.sender_id
         )
+        
+        # Notify Admins: Real-time interaction update
+        await manager.broadcast_to_admins({
+            "type": "interest_accepted",
+            "sender_id": interest.sender_id,
+            "receiver_id": interest.receiver_id,
+            "timestamp": datetime.now().isoformat()
+        })
     
     db.commit()
     db.refresh(interest)
@@ -559,6 +671,14 @@ async def toggle_shortlist(shortlist: schemas.ShortlistCreate, db: Session = Dep
         shortlist.user_id
     )
     
+    # Notify Admins
+    await manager.broadcast_to_admins({
+        "type": "shortlist_toggled",
+        "user_id": shortlist.user_id,
+        "target_id": shortlist.shortlisted_user_id,
+        "action": "added" if not existing else "removed"
+    })
+    
     return schemas.ApiResponse(status="success", message=msg)
 
 @app.get("/shortlists/{user_id}", response_model=schemas.ApiResponse)
@@ -578,13 +698,21 @@ def get_shortlisted_profiles(user_id: str, db: Session = Depends(get_db)):
     )
 
 @app.delete("/profiles/{user_id}", response_model=schemas.ApiResponse)
-def delete_profile(user_id: str, db: Session = Depends(get_db)):
+async def delete_profile(user_id: str, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="Profile not found")
     
     db.delete(db_user)
     db.commit()
+    
+    # Notify Admins: Real-time user removal
+    await manager.broadcast_to_admins({
+        "type": "profile_deleted",
+        "user_id": user_id,
+        "user_name": db_user.name
+    })
+    
     return schemas.ApiResponse(
         status="success",
         message="Profile deleted successfully"
@@ -598,7 +726,7 @@ def get_conversations(user_id: str, db: Session = Depends(get_db)):
     # and counts unread messages from them.
     from sqlalchemy import or_, desc
 
-    # 1. Get all unique conversation partners
+    # 1. Get all unique conversation partners from messages
     messages = db.query(models.ChatMessage).filter(
         or_(
             models.ChatMessage.sender_id == user_id,
@@ -611,6 +739,26 @@ def get_conversations(user_id: str, db: Session = Depends(get_db)):
         other_id = msg.receiver_id if msg.sender_id == user_id else msg.sender_id
         if other_id not in partners:
             partners[other_id] = msg
+
+    # 2. Get accepted interests (matches)
+    matches = db.query(models.Interest).filter(
+        models.Interest.status == 'accepted',
+        or_(models.Interest.sender_id == user_id, models.Interest.receiver_id == user_id)
+    ).all()
+
+    for match in matches:
+        other_id = match.receiver_id if match.sender_id == user_id else match.sender_id
+        if other_id not in partners:
+            # Create a mock message for new matches
+            mock_msg = models.ChatMessage(
+                id=f"match_{match.id}", # distinct ID prefix
+                sender_id=other_id, # pretend it's from them to prompt reply
+                receiver_id=user_id,
+                text="You matched! Say Hi 👋",
+                timestamp=match.timestamp or datetime.now(), # Use match time
+                is_read=True # Don't show as unread badge
+            )
+            partners[other_id] = mock_msg
 
     conversations = []
     for other_id, last_msg in partners.items():
@@ -625,7 +773,7 @@ def get_conversations(user_id: str, db: Session = Depends(get_db)):
         ).count()
         
         conversations.append({
-            "id": last_msg.id, # Using last msg ID as conv ID for simplicity
+            "id": last_msg.id, 
             "other_user_id": other_id,
             "other_user_name": other_user.name,
             "other_user_photo": other_user.photos[0] if other_user.photos else None,
@@ -633,6 +781,9 @@ def get_conversations(user_id: str, db: Session = Depends(get_db)):
             "last_message_time": last_msg.timestamp,
             "unread_count": unread_count
         })
+        
+    # Re-sort to show latest interactions first (messages or new matches)
+    conversations.sort(key=lambda x: x['last_message_time'], reverse=True)
 
     return schemas.ApiResponse(
         status="success",
@@ -668,7 +819,9 @@ async def send_message(msg_data: schemas.ChatMessageCreate, sender_id: str, db: 
         id=msg_data.id,
         sender_id=sender_id,
         receiver_id=msg_data.receiver_id,
-        text=msg_data.text
+        text=msg_data.text,
+        attachment_url=msg_data.attachment_url,
+        attachment_type=msg_data.attachment_type
     )
     db.add(new_msg)
     db.commit()
@@ -687,6 +840,28 @@ async def send_message(msg_data: schemas.ChatMessageCreate, sender_id: str, db: 
     await manager.send_personal_message(payload, msg_data.receiver_id)
     
     return schemas.ApiResponse(status="success", message="Message sent", data=schemas.ChatMessageResponse.model_validate(new_msg).model_dump())
+
+@app.post("/chat/upload", response_model=schemas.ApiResponse)
+async def upload_chat_attachment(file: UploadFile = File(...)):
+    try:
+        file_id = str(uuid.uuid4())
+        extension = os.path.splitext(file.filename)[1]
+        file_name = f"{file_id}{extension}"
+        file_path = f"backend/uploads/{file_name}"
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Return relative URL, client should prepend base URL
+        url = f"/uploads/{file_name}" 
+        
+        return schemas.ApiResponse(
+            status="success", 
+            message="File uploaded successfully", 
+            data={"url": url, "type": "image"} # Assuming image for now
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)

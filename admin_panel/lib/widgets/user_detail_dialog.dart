@@ -134,6 +134,14 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
                 "Registration Date",
                 DateFormatter.formatLongDate(widget.user.createdAt),
               ),
+              if (widget.user.isPremium &&
+                  widget.user.premiumExpiryDate != null) ...[
+                const SizedBox(height: 16),
+                _buildInfoSection(
+                  "Premium Expiry Date",
+                  DateFormatter.formatLongDate(widget.user.premiumExpiryDate),
+                ),
+              ],
               const SizedBox(height: 24),
               // Raw Data Section
               ExpansionTile(

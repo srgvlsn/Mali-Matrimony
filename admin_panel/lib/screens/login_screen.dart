@@ -62,150 +62,181 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
-        children: [
-          // Left Side - Mural / Brand
-          Expanded(
-            flex: 6,
-            child: Container(
-              color: AppStyles.primary,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Opacity(
-                    opacity: 0.1,
-                    child: Image.network(
-                      "https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?q=80&w=2787&auto=format&fit=crop",
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.admin_panel_settings,
-                          size: 100,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          "MALI MATRIMONY",
-                          style: TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 4,
-                          ),
-                        ),
-                        Text(
-                          "ADMINISTRATION PORTAL v1.0",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.7),
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Right Side - Login Form
-          Expanded(
-            flex: 4,
-            child: Container(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isNarrow = constraints.maxWidth < 900;
+
+          if (isNarrow) {
+            return Container(
               color: AppStyles.background,
-              padding: const EdgeInsets.symmetric(horizontal: 100),
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 40),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Welcome Back",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: AppStyles.primary,
-                          ),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: _buildLoginForm(),
+                ),
+              ),
+            );
+          }
+
+          return Row(
+            children: [
+              // Left Side - Mural / Brand
+              Expanded(
+                flex: 6,
+                child: Container(
+                  color: AppStyles.primary,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Opacity(
+                        opacity: 0.1,
+                        child: Image.network(
+                          "https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?q=80&w=2787&auto=format&fit=crop",
+                          fit: BoxFit.cover,
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          "Please enter your credentials to continue.",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                        const SizedBox(height: 48),
-                        _buildLabel("Admin ID"),
-                        TextFormField(
-                          controller: _idController,
-                          decoration: _buildInputDecoration("e.g. admin_01"),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Please enter your Admin ID";
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        _buildLabel("Password"),
-                        TextFormField(
-                          controller: _passController,
-                          obscureText: true,
-                          decoration: _buildInputDecoration("••••••••"),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return "Please enter your password";
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 48),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
-                            style: AppStyles.primaryButtonStyle.copyWith(
-                              padding: WidgetStateProperty.all(
-                                const EdgeInsets.symmetric(vertical: 24),
+                      ),
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.admin_panel_settings,
+                              size: 100,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(height: 24),
+                            const Text(
+                              "MALI MATRIMONY",
+                              style: TextStyle(
+                                fontSize: 42,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 4,
                               ),
                             ),
-                            child: _isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
-                                : const Text(
-                                    "LOGIN TO DASHBOARD",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        Center(
-                          child: TextButton(
-                            onPressed: () {},
-                            child: const Text(
-                              "Forgot Password?",
-                              style: TextStyle(color: AppStyles.primary),
+                            Text(
+                              "ADMINISTRATION PORTAL v1.0",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withValues(alpha: 0.7),
+                                letterSpacing: 2,
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Right Side - Login Form
+              Expanded(
+                flex: 4,
+                child: Container(
+                  color: AppStyles.background,
+                  padding: const EdgeInsets.symmetric(horizontal: 60),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 450),
+                      child: _buildLoginForm(),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildLoginForm() {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Welcome Back",
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: AppStyles.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Please enter your credentials to continue.",
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 48),
+              _buildLabel("Admin ID"),
+              TextFormField(
+                controller: _idController,
+                decoration: _buildInputDecoration("e.g. admin_01"),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter your Admin ID";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              _buildLabel("Password"),
+              TextFormField(
+                controller: _passController,
+                obscureText: true,
+                decoration: _buildInputDecoration("••••••••"),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter your password";
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  style: AppStyles.primaryButtonStyle.copyWith(
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(vertical: 24),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "LOGIN TO DASHBOARD",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    "Forgot Password?",
+                    style: TextStyle(color: AppStyles.primary),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

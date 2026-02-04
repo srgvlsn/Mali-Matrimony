@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import '../services/profile_service.dart';
 import 'profile_detail_screen.dart';
+import 'payment_screen.dart';
+import '../services/auth_service.dart';
+import 'package:provider/provider.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -93,12 +96,20 @@ class _SearchScreenState extends State<SearchScreen> {
       elevation: 4,
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProfileDetailScreen(userId: profile.id),
-            ),
-          );
+          final authService = Provider.of<AuthService>(context, listen: false);
+          if (authService.isPremiumUser) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProfileDetailScreen(userId: profile.id),
+              ),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaymentScreen()),
+            );
+          }
         },
         borderRadius: BorderRadius.circular(24),
         child: Padding(

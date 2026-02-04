@@ -84,7 +84,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
               CircleAvatar(
                 radius: 30,
                 backgroundImage: NetworkImage(
-                  conv.otherUserPhoto ?? 'https://via.placeholder.com/150',
+                  ApiService.instance.resolveUrl(
+                    conv.otherUserPhoto ?? 'https://via.placeholder.com/150',
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -120,12 +122,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
                             conv.lastMessage,
                             style: TextStyle(
                               fontSize: 14,
-                              color: conv.unreadCount > 0
-                                  ? Colors.black87
-                                  : Colors.grey[600],
-                              fontWeight: conv.unreadCount > 0
+                              color: conv.lastMessage.contains("You matched!")
+                                  ? Theme.of(context).primaryColor
+                                  : (conv.unreadCount > 0
+                                        ? Colors.black87
+                                        : Colors.grey[600]),
+                              fontWeight:
+                                  (conv.unreadCount > 0 ||
+                                      conv.lastMessage.contains("You matched!"))
                                   ? FontWeight.bold
                                   : FontWeight.normal,
+                              fontStyle:
+                                  conv.lastMessage.contains("You matched!")
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

@@ -22,6 +22,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool isShortlisted = false;
+  bool _isSendingInterest = false;
 
   @override
   void initState() {
@@ -72,6 +73,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   const SizedBox(height: 24),
                   const SectionTitle(title: 'About Me'),
                   ContentCard(text: profile.bio),
+                  const SizedBox(height: 24),
+                  const SectionTitle(title: 'Personal Details'),
+                  _buildPersonalDetailsSection(),
                   const SizedBox(height: 24),
                   const SectionTitle(title: 'Education & Career'),
                   _buildEducationCareerSection(),
@@ -256,14 +260,44 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
     );
   }
 
+  Widget _buildPersonalDetailsSection() {
+    return DetailListCard(
+      items: [
+        {
+          'label': 'Date of Birth',
+          'value': profile.dob != null
+              ? DateFormatter.formatShortDate(profile.dob)
+              : 'N/A',
+          'icon': Icons.cake,
+        },
+        {
+          'label': 'Gender',
+          'value': profile.gender.name.toUpperCase(),
+          'icon': Icons.person,
+        },
+        {
+          'label': 'Marital Status',
+          'value': profile.maritalStatus.displayValue,
+          'icon': Icons.favorite,
+        },
+      ],
+    );
+  }
+
   Widget _buildCommunitySection() {
     return DetailListCard(
       items: [
         {
           'label': 'Caste',
-          'value': '${profile.caste} (${profile.subCaste})',
+          'value': profile.caste ?? 'Not specified',
           'icon': Icons.people,
         },
+        if (profile.subCaste != null && profile.subCaste!.isNotEmpty)
+          {
+            'label': 'Sub-Caste',
+            'value': profile.subCaste!,
+            'icon': Icons.people_outline,
+          },
         {
           'label': 'Mother Tongue',
           'value': profile.motherTongue,
@@ -465,13 +499,28 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         }
                       : hasSentInterest
                       ? null
-                      : () {
-                          interestService.sendInterest(widget.userId);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Interest sent successfully!'),
-                            ),
+                      : () async {
+                          setState(() => _isSendingInterest = true);
+                          final success = await interestService.sendInterest(
+                            widget.userId,
                           );
+                          if (!context.mounted) return;
+                          setState(() => _isSendingInterest = false);
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Interest sent successfully!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to send interest'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
@@ -484,28 +533,37 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (interestStatus == InterestStatus.accepted)
-                        const Padding(
-                          padding: EdgeInsets.only(right: 8.0),
-                          child: Icon(
-                            Icons.chat_bubble_outline,
+                  child: _isSendingInterest
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
                             color: Colors.white,
-                            size: 20,
                           ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (interestStatus == InterestStatus.accepted)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 8.0),
+                                child: Icon(
+                                  Icons.chat_bubble_outline,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            Text(
+                              interestStatus == InterestStatus.accepted
+                                  ? 'Send Message'
+                                  : hasSentInterest
+                                  ? 'Interest Sent'
+                                  : 'Send Interest',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ],
                         ),
-                      Text(
-                        interestStatus == InterestStatus.accepted
-                            ? 'Send Message'
-                            : hasSentInterest
-                            ? 'Interest Sent'
-                            : 'Send Interest',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ],

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import '../screens/profile_detail_screen.dart';
+import '../screens/payment_screen.dart';
+import '../services/auth_service.dart';
+import 'package:provider/provider.dart';
 
 class UserCard extends StatelessWidget {
   final UserProfile profile;
@@ -19,12 +22,20 @@ class UserCard extends StatelessWidget {
   Widget _buildFeaturedCard(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ProfileDetailScreen(userId: profile.id),
-          ),
-        );
+        final authService = Provider.of<AuthService>(context, listen: false);
+        if (authService.isPremiumUser) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProfileDetailScreen(userId: profile.id),
+            ),
+          );
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PaymentScreen()),
+          );
+        }
       },
       child: Container(
         width: 200,
@@ -142,12 +153,20 @@ class UserCard extends StatelessWidget {
           color: Theme.of(context).colorScheme.primary,
         ),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProfileDetailScreen(userId: profile.id),
-            ),
-          );
+          final authService = Provider.of<AuthService>(context, listen: false);
+          if (authService.isPremiumUser) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProfileDetailScreen(userId: profile.id),
+              ),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaymentScreen()),
+            );
+          }
         },
       ),
     );

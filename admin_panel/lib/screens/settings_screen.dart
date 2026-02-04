@@ -89,46 +89,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildProfileTile() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppStyles.cardShadow,
-      ),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 30,
-            backgroundColor: AppStyles.primary,
-            child: Icon(Icons.person, color: Colors.white, size: 30),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _adminName,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Text(
-                  "admin@malimatrimony.com",
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isNarrow = constraints.maxWidth < 450;
+
+        final content = Row(
+          children: [
+            const CircleAvatar(
+              radius: 30,
+              backgroundColor: AppStyles.primary,
+              child: Icon(Icons.person, color: Colors.white, size: 30),
             ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _adminName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Text(
+                    "admin@malimatrimony.com",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
+            if (!isNarrow)
+              OutlinedButton(
+                onPressed: () {},
+                style: AppStyles.outlinedButtonStyle,
+                child: const Text("Edit"),
+              ),
+          ],
+        );
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: AppStyles.cardShadow,
           ),
-          OutlinedButton(
-            onPressed: () {},
-            style: AppStyles.outlinedButtonStyle,
-            child: const Text("Edit"),
-          ),
-        ],
-      ),
+          child: isNarrow
+              ? Column(
+                  children: [
+                    content,
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () {},
+                        style: AppStyles.outlinedButtonStyle,
+                        child: const Text("Edit"),
+                      ),
+                    ),
+                  ],
+                )
+              : content,
+        );
+      },
     );
   }
 
