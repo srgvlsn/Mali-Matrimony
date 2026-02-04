@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'auth_service.dart';
 import 'interest_service.dart';
 import 'profile_service.dart';
+import 'chat_service.dart';
 
 class NotificationService extends ChangeNotifier {
   final List<NotificationModel> _notifications = [];
@@ -92,6 +93,9 @@ class NotificationService extends ChangeNotifier {
               if (data['title'] == 'Profile Verified') {
                 AuthService.instance.refreshProfile();
               }
+            } else if (data['type'] == 'new_message') {
+              final chatMsg = ChatMessage.fromMap(data['data'], cleanUserId);
+              ChatService.instance.handleIncomingMessage(chatMsg);
             } else if (data['type'] == 'shortlist_updated') {
               ProfileService.instance.fetchProfiles();
             }

@@ -35,6 +35,9 @@ class User(Base):
     horoscope_image_url = Column(Text)
     is_verified = Column(Boolean, default=False)
     is_premium = Column(Boolean, default=False)
+    is_hidden = Column(Boolean, default=False)
+    show_phone = Column(Boolean, default=True)
+    show_email = Column(Boolean, default=True)
     view_count = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -73,4 +76,13 @@ class Notification(Base):
     type = Column(String, nullable=False) # newMatch, profileView, message, interestReceived, interestAccepted, system
     is_read = Column(Boolean, default=False)
     related_user_id = Column(String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(String, primary_key=True, index=True)
+    sender_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    receiver_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    text = Column(Text, nullable=False)
+    is_read = Column(Boolean, default=False)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())

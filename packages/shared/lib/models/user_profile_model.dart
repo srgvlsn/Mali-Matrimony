@@ -56,6 +56,9 @@ class UserProfile {
   // Status
   final bool isVerified;
   final bool isPremium;
+  final bool isHidden;
+  final bool showPhone;
+  final bool showEmail;
   final DateTime? createdAt;
 
   UserProfile({
@@ -88,6 +91,9 @@ class UserProfile {
     this.horoscopeImageUrl,
     this.isVerified = false,
     this.isPremium = false,
+    this.isHidden = false,
+    this.showPhone = true,
+    this.showEmail = true,
     this.createdAt,
   });
 
@@ -120,6 +126,9 @@ class UserProfile {
     String? horoscopeImageUrl,
     bool? isVerified,
     bool? isPremium,
+    bool? isHidden,
+    bool? showPhone,
+    bool? showEmail,
     DateTime? createdAt,
   }) {
     return UserProfile(
@@ -152,6 +161,9 @@ class UserProfile {
       horoscopeImageUrl: horoscopeImageUrl ?? this.horoscopeImageUrl,
       isVerified: isVerified ?? this.isVerified,
       isPremium: isPremium ?? this.isPremium,
+      isHidden: isHidden ?? this.isHidden,
+      showPhone: showPhone ?? this.showPhone,
+      showEmail: showEmail ?? this.showEmail,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -233,6 +245,9 @@ class UserProfile {
       'horoscope_image_url': horoscopeImageUrl,
       'is_verified': isVerified,
       'is_premium': isPremium,
+      'is_hidden': isHidden,
+      'show_phone': showPhone,
+      'show_email': showEmail,
       'created_at': createdAt?.toIso8601String(),
     };
   }
@@ -280,6 +295,9 @@ class UserProfile {
       horoscopeImageUrl: map['horoscope_image_url'] as String?,
       isVerified: map['is_verified'] as bool? ?? false,
       isPremium: map['is_premium'] as bool? ?? false,
+      isHidden: map['is_hidden'] as bool? ?? false,
+      showPhone: map['show_phone'] as bool? ?? true,
+      showEmail: map['show_email'] as bool? ?? true,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'] as String)
           : null,

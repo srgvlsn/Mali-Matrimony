@@ -31,6 +31,9 @@ class UserBase(BaseModel):
     horoscope_image_url: Optional[str] = None
     is_verified: bool = False
     is_premium: bool = False
+    is_hidden: bool = False
+    show_phone: bool = True
+    show_email: bool = True
 
     @field_validator('languages', 'photos', mode='before')
     @classmethod
@@ -114,3 +117,32 @@ class UserAnalytics(BaseModel):
     interests_received: int
     shortlisted_by: int
     model_config = ConfigDict(from_attributes=True)
+
+class ChatMessageCreate(BaseModel):
+    id: str
+    receiver_id: str
+    text: str
+
+class ChatMessageResponse(BaseModel):
+    id: str
+    sender_id: str
+    receiver_id: str
+    text: str
+    is_read: bool
+    timestamp: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+class ConversationResponse(BaseModel):
+    id: str
+    other_user_id: str
+    other_user_name: str
+    other_user_photo: Optional[str] = None
+    last_message: str
+    last_message_time: datetime
+    unread_count: int
+    model_config = ConfigDict(from_attributes=True)
+
+class UserSettingsUpdate(BaseModel):
+    is_hidden: Optional[bool] = None
+    show_phone: Optional[bool] = None
+    show_email: Optional[bool] = None

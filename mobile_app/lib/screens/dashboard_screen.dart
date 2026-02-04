@@ -24,6 +24,14 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ChatService>().fetchConversations();
+    });
+  }
+
   final List<Widget> _screens = [
     const _HomeView(),
     const InterestsScreen(),

@@ -5,7 +5,7 @@ import 'package:shared/shared.dart';
 import '../services/auth_service.dart';
 import '../services/profile_service.dart';
 import '../services/media_service.dart';
-import 'login_screen.dart';
+import 'settings_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -594,7 +594,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               const SizedBox(height: 24),
               _buildHoroscopeSection(profile),
               const SizedBox(height: 40),
-              _buildLogoutButton(context),
+              _buildSettingsButton(context),
               const SizedBox(height: 20),
             ],
           ),
@@ -1015,25 +1015,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: () async {
-        await AuthService.instance.logout();
-        if (!context.mounted) return;
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false,
-        );
-      },
-      icon: const Icon(Icons.logout),
-      label: const Text("Logout"),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF820815),
-        foregroundColor: Colors.white,
-        minimumSize: const Size(double.infinity, 56),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-      ),
+  Widget _buildSettingsButton(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            );
+          },
+          icon: const Icon(Icons.settings_outlined),
+          label: const Text("Settings & Privacy"),
+          style: AppStyles.outlinedButtonStyle.copyWith(
+            minimumSize: WidgetStateProperty.all(
+              const Size(double.infinity, 56),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

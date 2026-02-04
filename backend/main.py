@@ -18,7 +18,7 @@ from pydantic import BaseModel
 # Create tables
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Mali Matrimony API")
+app = FastAPI(title="Mali Matrimony API", version="0.6.7")
 
 # Mount uploads directory to serve images
 os.makedirs("backend/uploads", exist_ok=True)
@@ -387,6 +387,39 @@ async def update_profile(user_id: str, user_update: schemas.UserBase, db: Sessio
         data=schemas.UserResponse.model_validate(db_user).model_dump()
     )
 
+@app.put("/profiles/{user_id}/settings", response_model=schemas.ApiResponse)
+async def update_user_settings(user_id: str, settings: schemas.UserSettingsUpdate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    update_data = settings.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_user, key, value)
+    
+    db.commit()
+    db.refresh(db_user)
+    return schemas.ApiResponse(
+        status="success",
+        message="Settings updated",
+        data=schemas.UserResponse.model_validate(db_user).model_dump()
+    )
+
+@app.delete("/users/{user_id}", response_model=schemas.ApiResponse)
+async def delete_user(user_id: str, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Delete related notifications and messages (handled by CASCADE in DB)
+    db.delete(db_user)
+    db.commit()
+    
+    return schemas.ApiResponse(
+        status="success",
+        message="Account deleted successfully"
+    )
+
 # ==================== Notification API ====================
 
 @app.get("/notifications/{user_id}", response_model=schemas.ApiResponse)
@@ -556,6 +589,104 @@ def delete_profile(user_id: str, db: Session = Depends(get_db)):
         status="success",
         message="Profile deleted successfully"
     )
+
+# ==================== Chat API ====================
+
+@app.get("/chat/conversations/{user_id}", response_model=schemas.ApiResponse)
+def get_conversations(user_id: str, db: Session = Depends(get_db)):
+    # This query finds the latest message for each distinct conversation partner
+    # and counts unread messages from them.
+    from sqlalchemy import or_, desc
+
+    # 1. Get all unique conversation partners
+    messages = db.query(models.ChatMessage).filter(
+        or_(
+            models.ChatMessage.sender_id == user_id,
+            models.ChatMessage.receiver_id == user_id
+        )
+    ).order_by(desc(models.ChatMessage.timestamp)).all()
+
+    partners = {}
+    for msg in messages:
+        other_id = msg.receiver_id if msg.sender_id == user_id else msg.sender_id
+        if other_id not in partners:
+            partners[other_id] = msg
+
+    conversations = []
+    for other_id, last_msg in partners.items():
+        other_user = db.query(models.User).filter(models.User.id == other_id).first()
+        if not other_user:
+            continue
+            
+        unread_count = db.query(models.ChatMessage).filter(
+            models.ChatMessage.sender_id == other_id,
+            models.ChatMessage.receiver_id == user_id,
+            models.ChatMessage.is_read == False
+        ).count()
+        
+        conversations.append({
+            "id": last_msg.id, # Using last msg ID as conv ID for simplicity
+            "other_user_id": other_id,
+            "other_user_name": other_user.name,
+            "other_user_photo": other_user.photos[0] if other_user.photos else None,
+            "last_message": last_msg.text,
+            "last_message_time": last_msg.timestamp,
+            "unread_count": unread_count
+        })
+
+    return schemas.ApiResponse(
+        status="success",
+        message="Conversations fetched",
+        data=conversations
+    )
+
+@app.get("/chat/messages", response_model=schemas.ApiResponse)
+def get_chat_messages(user_id: str, other_user_id: str, db: Session = Depends(get_db)):
+    from sqlalchemy import or_, and_
+    
+    messages = db.query(models.ChatMessage).filter(
+        or_(
+            and_(models.ChatMessage.sender_id == user_id, models.ChatMessage.receiver_id == other_user_id),
+            and_(models.ChatMessage.sender_id == other_user_id, models.ChatMessage.receiver_id == user_id)
+        )
+    ).order_by(models.ChatMessage.timestamp).all()
+    
+    # Mark messages from the other user as read
+    db.query(models.ChatMessage).filter(
+        models.ChatMessage.sender_id == other_user_id,
+        models.ChatMessage.receiver_id == user_id,
+        models.ChatMessage.is_read == False
+    ).update({"is_read": True})
+    db.commit()
+    
+    data = [schemas.ChatMessageResponse.model_validate(m).model_dump() for m in messages]
+    return schemas.ApiResponse(status="success", message="Messages fetched", data=data)
+
+@app.post("/chat/send", response_model=schemas.ApiResponse)
+async def send_message(msg_data: schemas.ChatMessageCreate, sender_id: str, db: Session = Depends(get_db)):
+    new_msg = models.ChatMessage(
+        id=msg_data.id,
+        sender_id=sender_id,
+        receiver_id=msg_data.receiver_id,
+        text=msg_data.text
+    )
+    db.add(new_msg)
+    db.commit()
+    db.refresh(new_msg)
+    
+    from .main import manager # Ensure it's the right manager if needed, but here it's global
+    
+    # Send via WebSocket
+    payload = {
+        "type": "new_message",
+        "data": schemas.ChatMessageResponse.model_validate(new_msg).model_dump()
+    }
+    # Payload format needs to handle datetime serialization
+    payload["data"]["timestamp"] = payload["data"]["timestamp"].isoformat()
+    
+    await manager.send_personal_message(payload, msg_data.receiver_id)
+    
+    return schemas.ApiResponse(status="success", message="Message sent", data=schemas.ChatMessageResponse.model_validate(new_msg).model_dump())
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.7] - 2026-02-03
+### Added
+- **Real-Time Chat**: Full backend integration for messaging using PostgreSQL storage.
+- **WebSocket Messaging**: Instant message delivery and receipt via existing WebSocket infrastructure.
+- **Optimistic Chat UI**: Immediate message bubbles on send for better UX.
+- **Conversation Management**: Persistent conversation list with unread counts and last message previews.
+- **Auto-Sync**: Background fetching of conversations and messages on app startup and navigation.
+
 ## [0.6.6] - 2026-02-03
 ### Added
 - **Real-Time Notifications**: Implemented WebSockets for instant Interest, Chat, and Profile View alerts.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/chat_service.dart';
 import 'package:shared/shared.dart';
+import 'package:provider/provider.dart';
 
 class ChatDetailScreen extends StatefulWidget {
   final Conversation conversation;
@@ -12,48 +13,50 @@ class ChatDetailScreen extends StatefulWidget {
 }
 
 class _ChatDetailScreenState extends State<ChatDetailScreen> {
-  final ChatService _chatService = ChatService.instance;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _chatService.addListener(_onServiceUpdate);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ChatService>().fetchMessages(
+        widget.conversation.otherUserId,
+      );
+    });
   }
 
   @override
   void dispose() {
-    _chatService.removeListener(_onServiceUpdate);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _onServiceUpdate() {
-    if (mounted) setState(() {});
-  }
-
   void _sendMessage() {
     final text = _messageController.text.trim();
     if (text.isNotEmpty) {
-      _chatService.sendMessage(widget.conversation.id, text);
+      context.read<ChatService>().sendMessage(
+        widget.conversation.otherUserId,
+        text,
+      );
       _messageController.clear();
-      // Scroll to bottom
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
+      _scrollToBottom();
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent + 100,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final messages = _chatService.getMessages(widget.conversation.id);
-
     return Scaffold(
       backgroundColor: AppStyles.background,
       appBar: AppBar(
@@ -67,7 +70,10 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundImage: NetworkImage(widget.conversation.otherUserPhoto),
+              backgroundImage: NetworkImage(
+                widget.conversation.otherUserPhoto ??
+                    'https://via.placeholder.com/150',
+              ),
             ),
             const SizedBox(width: 12),
             Text(
@@ -81,21 +87,38 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
           ],
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final msg = messages[index];
-                return _buildMessageBubble(msg);
-              },
-            ),
-          ),
-          _buildInputArea(),
-        ],
+      body: Consumer<ChatService>(
+        builder: (context, chatService, child) {
+          final messages = chatService.getMessages(
+            widget.conversation.otherUserId,
+          );
+
+          if (messages.isEmpty && chatService.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          // Trigger scroll to bottom on new messages
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _scrollToBottom(),
+          );
+
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = messages[index];
+                    return _buildMessageBubble(msg);
+                  },
+                ),
+              ),
+              _buildInputArea(),
+            ],
+          );
+        },
       ),
     );
   }

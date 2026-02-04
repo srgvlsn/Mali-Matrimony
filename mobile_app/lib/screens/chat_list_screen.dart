@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 import '../services/chat_service.dart';
 import 'chat_detail_screen.dart';
+import 'package:provider/provider.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -11,18 +12,52 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
-  final ChatService _chatService = ChatService.instance;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ChatService>().fetchConversations();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final conversations = _chatService.conversations;
+    return Consumer<ChatService>(
+      builder: (context, chatService, child) {
+        final conversations = chatService.conversations;
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-      itemCount: conversations.length,
-      itemBuilder: (context, index) {
-        final conv = conversations[index];
-        return _buildConversationTile(context, conv);
+        if (chatService.isLoading && conversations.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (conversations.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 60,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No messages yet',
+                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+          itemCount: conversations.length,
+          itemBuilder: (context, index) {
+            final conv = conversations[index];
+            return _buildConversationTile(context, conv);
+          },
+        );
       },
     );
   }
@@ -48,7 +83,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
             children: [
               CircleAvatar(
                 radius: 30,
-                backgroundImage: NetworkImage(conv.otherUserPhoto),
+                backgroundImage: NetworkImage(
+                  conv.otherUserPhoto ?? 'https://via.placeholder.com/150',
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(

@@ -5,6 +5,7 @@ import '../models/user_profile_model.dart';
 import '../models/interest_model.dart';
 import '../models/notification_model.dart';
 import '../models/user_analytics.dart';
+import '../models/chat_model.dart';
 import '../utils/api_response.dart';
 import 'api_service.dart';
 
@@ -583,6 +584,124 @@ class BackendService {
       }
     } catch (e) {
       return ApiResponse.error('Failed to mark notification as read: $e');
+    }
+  }
+
+  Future<ApiResponse<UserProfile>> updateUserSettings(
+    String userId,
+    Map<String, dynamic> settings,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/profiles/$userId/settings'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(settings),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return ApiResponse.success(UserProfile.fromMap(data['data']));
+      } else {
+        return ApiResponse.error('Failed to update settings');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to update settings: $e');
+    }
+  }
+
+  Future<ApiResponse<void>> deleteAccount(String userId) async {
+    try {
+      final response = await http.delete(Uri.parse('$_baseUrl/users/$userId'));
+
+      if (response.statusCode == 200) {
+        return ApiResponse.success(null);
+      } else {
+        return ApiResponse.error('Failed to delete account');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to delete account: $e');
+    }
+  }
+
+  // ==================== Chat API ====================
+
+  Future<ApiResponse<List<Conversation>>> getConversations(
+    String userId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/chat/conversations/$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> jsonList = data['data'];
+        final conversations = jsonList
+            .map((c) => Conversation.fromMap(c))
+            .toList();
+        return ApiResponse.success(conversations);
+      } else {
+        return ApiResponse.error('Failed to fetch conversations');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to fetch conversations: $e');
+    }
+  }
+
+  Future<ApiResponse<List<ChatMessage>>> getChatMessages(
+    String userId,
+    String otherUserId,
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/chat/messages').replace(
+        queryParameters: {'user_id': userId, 'other_user_id': otherUserId},
+      );
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> jsonList = data['data'];
+        final messages = jsonList
+            .map((m) => ChatMessage.fromMap(m, userId))
+            .toList();
+        return ApiResponse.success(messages);
+      } else {
+        return ApiResponse.error('Failed to fetch messages');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to fetch messages: $e');
+    }
+  }
+
+  Future<ApiResponse<ChatMessage>> sendChatMessage(
+    String senderId,
+    String receiverId,
+    String text,
+  ) async {
+    try {
+      final msgId = 'msg_${DateTime.now().millisecondsSinceEpoch}';
+      final uri = Uri.parse(
+        '$_baseUrl/chat/send',
+      ).replace(queryParameters: {'sender_id': senderId});
+
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'id': msgId,
+          'receiver_id': receiverId,
+          'text': text,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return ApiResponse.success(ChatMessage.fromMap(data['data'], senderId));
+      } else {
+        return ApiResponse.error('Failed to send message');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to send message: $e');
     }
   }
 }
