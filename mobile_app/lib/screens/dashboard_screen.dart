@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import 'blocked_conversations_screen.dart';
+import 'archived_conversations_screen.dart';
 import '../services/chat_service.dart';
 import '../services/interest_service.dart';
 import 'profile_detail_screen.dart';
@@ -34,8 +36,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  final List<Widget> _screens = [
-    const _HomeView(),
+  late final List<Widget> _screens = [
+    _HomeView(
+      onNavigateToInterests: () {
+        setState(() => _selectedIndex = 1);
+      },
+    ),
     const InterestsScreen(),
     const ChatListScreen(),
     const UserProfileScreen(),
@@ -43,22 +49,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final chatService = context.watch<ChatService>();
+    final isSelectionMode = chatService.isSelectionMode && _selectedIndex == 2;
+
     return Scaffold(
       extendBody: true,
       appBar: _selectedIndex == 1
           ? null
           : AppBar(
-              title: Text(
-                _getAppBarTitle(),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              title: isSelectionMode
+                  ? Text(
+                      '${chatService.selectedConversationIds.length} Selected',
+                    )
+                  : Text(
+                      _getAppBarTitle(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               surfaceTintColor: Colors.transparent,
               scrolledUnderElevation: 0,
               elevation: 0,
+              leading: isSelectionMode
+                  ? IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: chatService.clearSelection,
+                    )
+                  : null,
               systemOverlayStyle: const SystemUiOverlayStyle(
                 statusBarColor: Colors.transparent,
                 statusBarIconBrightness: Brightness.dark,
@@ -66,12 +85,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 systemNavigationBarIconBrightness: Brightness.dark,
               ),
               actions: [
-                NotificationBadge(
-                  onProfileVerified: () {
-                    setState(() => _selectedIndex = 3);
-                  },
-                ),
-                if (_selectedIndex == 3) // Only on Profile Tab
+                if (!isSelectionMode)
+                  NotificationBadge(
+                    onProfileVerified: () {
+                      setState(() => _selectedIndex = 3);
+                    },
+                  ),
+                if (_selectedIndex == 2) // Chat Tab
+                  if (isSelectionMode)
+                    PopupMenuButton<String>(
+                      icon: Icon(
+                        Icons.more_vert_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      onSelected: (value) {
+                        if (value == 'archive') {
+                          chatService.archiveSelectedConversations();
+                        } else if (value == 'read') {
+                          // chatService.markSelectedAsRead();
+                          chatService.clearSelection();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        _buildPopupMenuItem(Icons.archive_outlined, "Archive"),
+                        // _buildPopupMenuItem(Icons.mark_email_read_outlined, "Mark as Read"),
+                      ],
+                    )
+                  else
+                    PopupMenuButton<String>(
+                      icon: Icon(
+                        Icons.more_vert_rounded,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      onSelected: (value) {
+                        if (value == 'blocked') {
+                          _showBlockedConversations();
+                        } else if (value == 'archived') {
+                          _showArchivedConversations();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        _buildPopupMenuItem(Icons.block_outlined, "Blocked"),
+                        _buildPopupMenuItem(Icons.archive_outlined, "Archived"),
+                      ],
+                    ),
+                if (_selectedIndex == 3) // Profile Tab
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert_rounded,
@@ -177,6 +241,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _showBlockedConversations() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const BlockedConversationsScreen(),
+      ),
+    );
+  }
+
+  void _showArchivedConversations() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ArchivedConversationsScreen(),
+      ),
+    );
+  }
+
   PopupMenuItem<String> _buildPopupMenuItem(IconData icon, String title) {
     return PopupMenuItem<String>(
       value: title,
@@ -198,7 +280,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 class _HomeView extends StatefulWidget {
-  const _HomeView();
+  final VoidCallback? onNavigateToInterests;
+  const _HomeView({this.onNavigateToInterests});
 
   @override
   State<_HomeView> createState() => _HomeViewState();
@@ -345,7 +428,7 @@ class _HomeViewState extends State<_HomeView> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(AppStyles.radiusL),
           boxShadow: [
             BoxShadow(
               color: Theme.of(
@@ -397,19 +480,27 @@ class _HomeViewState extends State<_HomeView> {
               children: [
                 _buildReachItem(
                   "Views",
-                  analytics?.totalViews.toString() ?? "0",
+                  (analytics?.totalViews ?? 0).toString(),
                   Icons.remove_red_eye_outlined,
                 ),
                 _buildReachDivider(),
                 _buildReachItem(
-                  "Interests",
-                  analytics?.interestsReceived.toString() ?? "0",
+                  "Received",
+                  (analytics?.interestsReceived ?? 0).toString(),
                   Icons.star_outline_rounded,
+                  onTap: widget.onNavigateToInterests,
+                ),
+                _buildReachDivider(),
+                _buildReachItem(
+                  "Sent",
+                  (analytics?.interestsSent ?? 0).toString(),
+                  Icons.send_rounded,
+                  onTap: widget.onNavigateToInterests,
                 ),
                 _buildReachDivider(),
                 _buildReachItem(
                   "Shortlists",
-                  analytics?.shortlistedBy.toString() ?? "0",
+                  (analytics?.shortlistedBy ?? 0).toString(),
                   Icons.favorite_border_rounded,
                 ),
               ],
@@ -420,25 +511,37 @@ class _HomeViewState extends State<_HomeView> {
     );
   }
 
-  Widget _buildReachItem(String label, String value, IconData icon) {
+  Widget _buildReachItem(
+    String label,
+    String value,
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
     return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white70, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            children: [
+              Icon(icon, color: Colors.white70, size: 20),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white60, fontSize: 12),
+              ),
+            ],
           ),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white60, fontSize: 12),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -497,11 +600,11 @@ class _HomeViewState extends State<_HomeView> {
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
         boxShadow: AppStyles.cardShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
         child: Stack(
           children: [
             InkWell(

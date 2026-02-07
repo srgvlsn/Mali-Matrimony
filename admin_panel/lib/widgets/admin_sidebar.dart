@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
+import '../services/admin_theme_service.dart';
 
 class AdminSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -13,25 +14,26 @@ class AdminSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: 250,
-      color: Colors.white,
+      color: theme.cardTheme.color ?? theme.colorScheme.surface,
       child: Column(
         children: [
           // Header / Logo
           Container(
             height: 80,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.black12)),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: theme.dividerColor)),
             ),
-            child: const Text(
+            child: Text(
               "Mali Matrimony\nAdmin Portal",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: AppStyles.primary,
+                color: theme.colorScheme.primary,
               ),
             ),
           ),
@@ -73,26 +75,68 @@ class AdminSidebar extends StatelessWidget {
             ),
           ),
 
+          // Theme Toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ValueListenableBuilder<ThemeMode>(
+              valueListenable: AdminThemeService.instance.themeMode,
+              builder: (context, mode, child) {
+                final isDark = mode == ThemeMode.dark;
+                return ListTile(
+                  dense: true,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  tileColor: theme.colorScheme.primary.withValues(alpha: 0.05),
+                  leading: Icon(
+                    isDark ? Icons.dark_mode : Icons.light_mode,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: Text(
+                    isDark ? "Dark Mode" : "Light Mode",
+                    style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  trailing: Switch(
+                    value: isDark,
+                    onChanged: (_) => AdminThemeService.instance.toggleTheme(),
+                    activeThumbColor: theme.colorScheme.primary,
+                  ),
+                );
+              },
+            ),
+          ),
+
           // Footer
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.black12)),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: theme.dividerColor)),
             ),
             child: Column(
               children: [
-                const Text(
+                Text(
                   "Mali Matrimony Admin",
                   style: TextStyle(
-                    color: Colors.grey,
+                    color: theme.textTheme.bodySmall?.color?.withValues(
+                      alpha: 0.5,
+                    ),
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   "v1.0.0-beta",
-                  style: TextStyle(color: Colors.grey, fontSize: 10),
+                  style: TextStyle(
+                    color: theme.textTheme.bodySmall?.color?.withValues(
+                      alpha: 0.4,
+                    ),
+                    fontSize: 10,
+                  ),
                 ),
               ],
             ),

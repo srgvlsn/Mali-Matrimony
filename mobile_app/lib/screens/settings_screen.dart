@@ -4,6 +4,7 @@ import 'package:shared/shared.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'payment_screen.dart';
+import 'blocked_conversations_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final bool highlightMembership;
@@ -228,6 +229,21 @@ class _SettingsScreenState extends State<SettingsScreen>
                       user.showEmail,
                       (val) => _updateSetting('show_email', val),
                     ),
+                    const Divider(height: 1),
+                    _buildActionTile(
+                      "Blocked Users",
+                      "Manage users you've blocked",
+                      Icons.block_outlined,
+                      Colors.orange,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const BlockedConversationsScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   ]),
                   const SizedBox(height: 32),
                   _buildSectionHeader("Membership"),
@@ -237,6 +253,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _buildSettingCard([
                     _buildActionTile(
                       "Logout",
+                      null, // subtitle
                       Icons.logout,
                       Colors.black87,
                       _handleLogout,
@@ -244,6 +261,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                     const Divider(height: 1),
                     _buildActionTile(
                       "Delete Account",
+                      null, // subtitle
                       Icons.delete_forever_outlined,
                       Colors.red,
                       _handleDeleteAccount,
@@ -286,7 +304,9 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildSettingCard(List<Widget> children) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
+      ),
       elevation: 2,
       child: Column(children: children),
     );
@@ -326,7 +346,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           scale: _scaleAnimation,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(AppStyles.radiusL),
               boxShadow: [
                 BoxShadow(
                   color: AppStyles.primary.withValues(
@@ -347,7 +367,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   Widget _buildBasePremiumCard(UserProfile user) {
     if (!user.isPremium) {
       return Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppStyles.radiusL),
+        ),
         elevation: 2,
         child: ListTile(
           contentPadding: const EdgeInsets.symmetric(
@@ -394,7 +416,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
         boxShadow: [
           BoxShadow(
             color: AppStyles.primary.withValues(alpha: 0.3),
@@ -463,7 +485,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.white24,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppStyles.radiusS),
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
@@ -471,7 +493,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppStyles.radiusS),
                 ),
               ),
             ),
@@ -492,6 +514,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildActionTile(
     String title,
+    String? subtitle,
     IconData icon,
     Color color,
     VoidCallback onTap,
@@ -506,6 +529,12 @@ class _SettingsScreenState extends State<SettingsScreen>
           fontSize: 16,
         ),
       ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            )
+          : null,
       trailing: const Icon(Icons.chevron_right, size: 20),
       onTap: onTap,
     );

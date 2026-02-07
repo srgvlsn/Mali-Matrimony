@@ -20,12 +20,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "Settings & Profile",
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: AppStyles.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(height: 24),
@@ -81,7 +81,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: AppStyles.primary.withValues(alpha: 0.6),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
           letterSpacing: 1.2,
         ),
       ),
@@ -112,9 +112,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Text(
+                  Text(
                     "admin@malimatrimony.com",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                    ),
                   ),
                 ],
               ),
@@ -131,9 +135,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: AppStyles.cardShadow,
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(AppStyles.radiusL),
+            boxShadow: Theme.of(context).brightness == Brightness.dark
+                ? []
+                : AppStyles.cardShadow,
           ),
           child: isNarrow
               ? Column(
@@ -166,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
         boxShadow: AppStyles.cardShadow,
       ),
       child: SwitchListTile(
@@ -185,9 +191,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppStyles.cardShadow,
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? []
+            : AppStyles.cardShadow,
       ),
       child: ListTile(
         leading: Icon(icon, color: AppStyles.primary),

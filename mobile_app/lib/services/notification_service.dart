@@ -60,6 +60,15 @@ class NotificationService extends ChangeNotifier {
   int _reconnectAttempts = 0;
   static const int _maxReconnectAttempts = 3;
 
+  void sendEvent(String type, Map<String, dynamic> data) {
+    if (_channel != null) {
+      final message = json.encode({'type': type, ...data});
+      _channel!.sink.add(message);
+    } else {
+      debugPrint('WebSocket not connected, cannot send event: $type');
+    }
+  }
+
   void _initWebSocket(String userId) {
     if (_channel != null) return; // Already connected
     if (_reconnectAttempts >= _maxReconnectAttempts) {
@@ -110,6 +119,10 @@ class NotificationService extends ChangeNotifier {
               ProfileService.instance.fetchProfiles();
               ProfileService.instance.fetchAnalytics();
             } else if (data['type'] == 'profile_updated') {
+              final updatedUserId = data['user_id'] as String?;
+              if (updatedUserId != null) {
+                ProfileService.instance.fetchProfile(updatedUserId);
+              }
               AuthService.instance.refreshProfile();
               ProfileService.instance.fetchAnalytics();
             } else if (data['type'] == 'typing_started' ||

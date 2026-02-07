@@ -5,6 +5,7 @@ class ChatMessage {
   final String text;
   final DateTime timestamp;
   final bool isMe;
+  final bool isRead;
   final String? attachmentUrl;
   final String? attachmentType;
 
@@ -15,6 +16,7 @@ class ChatMessage {
     required this.text,
     required this.timestamp,
     required this.isMe,
+    required this.isRead,
     this.attachmentUrl,
     this.attachmentType,
   });
@@ -27,6 +29,7 @@ class ChatMessage {
       text: map['text'],
       timestamp: DateTime.parse(map['timestamp']),
       isMe: map['sender_id'] == currentUserId,
+      isRead: map['is_read'] == true,
       attachmentUrl: map['attachment_url'],
       attachmentType: map['attachment_type'],
     );
@@ -53,6 +56,8 @@ class Conversation {
   final String lastMessage;
   final DateTime lastMessageTime;
   final int unreadCount;
+  final bool isLastMessageMe;
+  final bool isBlocked;
 
   Conversation({
     required this.id,
@@ -62,17 +67,35 @@ class Conversation {
     required this.lastMessage,
     required this.lastMessageTime,
     this.unreadCount = 0,
+    required this.isLastMessageMe,
+    this.isBlocked = false,
   });
 
-  factory Conversation.fromMap(Map<String, dynamic> map) {
+  factory Conversation.fromMap(Map<String, dynamic>? map) {
+    if (map == null) {
+      return Conversation(
+        id: '',
+        otherUserId: '',
+        otherUserName: 'Unknown',
+        lastMessage: '',
+        lastMessageTime: DateTime.now(),
+        unreadCount: 0,
+        isLastMessageMe: false,
+        isBlocked: false,
+      );
+    }
     return Conversation(
-      id: map['id'],
-      otherUserId: map['other_user_id'],
-      otherUserName: map['other_user_name'],
+      id: map['id'] ?? '',
+      otherUserId: map['other_user_id'] ?? '',
+      otherUserName: map['other_user_name'] ?? 'Unknown',
       otherUserPhoto: map['other_user_photo'],
-      lastMessage: map['last_message'],
-      lastMessageTime: DateTime.parse(map['last_message_time']),
-      unreadCount: map['unread_count'] ?? 0,
+      lastMessage: map['last_message'] ?? '',
+      lastMessageTime: map['last_message_time'] != null
+          ? DateTime.parse(map['last_message_time'])
+          : DateTime.now(),
+      unreadCount: (map['unread_count'] as num?)?.toInt() ?? 0,
+      isLastMessageMe: map['is_last_message_me'] == true,
+      isBlocked: map['is_blocked'] == true,
     );
   }
 }

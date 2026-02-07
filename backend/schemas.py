@@ -34,7 +34,9 @@ class UserBase(BaseModel):
     is_hidden: bool = False
     show_phone: bool = True
     show_email: bool = True
+    is_active: bool = True
     premium_expiry_date: Optional[datetime] = None
+    last_premium_reminder: Optional[str] = None
 
     @field_validator('languages', 'photos', mode='before')
     @classmethod
@@ -117,6 +119,7 @@ class UserAnalytics(BaseModel):
     total_views: int
     interests_received: int
     shortlisted_by: int
+    interests_sent: int
     model_config = ConfigDict(from_attributes=True)
 
 class ChatMessageCreate(BaseModel):
@@ -145,6 +148,7 @@ class ConversationResponse(BaseModel):
     last_message: str
     last_message_time: datetime
     unread_count: int
+    is_last_message_me: bool
     model_config = ConfigDict(from_attributes=True)
 
 class UserSettingsUpdate(BaseModel):

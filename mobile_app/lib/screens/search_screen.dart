@@ -61,7 +61,7 @@ class _SearchScreenState extends State<SearchScreen> {
         backgroundColor: const Color(0xFFFFD1C8),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF820815)),
+          icon: const Icon(Icons.arrow_back, color: AppStyles.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: TextField(
@@ -71,7 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
           decoration: InputDecoration(
             hintText: "Search name, location, caste...",
             hintStyle: TextStyle(
-              color: const Color(0xFF820815).withValues(alpha: 0.5),
+              color: AppStyles.primary.withValues(alpha: 0.5),
             ),
             border: InputBorder.none,
           ),
@@ -92,7 +92,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildProfileCard(UserProfile profile) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
+      ),
       elevation: 4,
       child: InkWell(
         onTap: () {
@@ -111,13 +113,13 @@ class _SearchScreenState extends State<SearchScreen> {
             );
           }
         },
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppStyles.radiusS),
                 child: Image.network(
                   ApiService.instance.resolveUrl(
                     profile.photos.isNotEmpty ? profile.photos[0] : null,
@@ -137,7 +139,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF820815),
+                        color: AppStyles.primary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -150,7 +152,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Color(0xFF820815)),
+              const Icon(Icons.chevron_right, color: AppStyles.primary),
             ],
           ),
         ),
@@ -166,7 +168,7 @@ class _SearchScreenState extends State<SearchScreen> {
           Icon(
             _searchController.text.isEmpty ? Icons.search : Icons.search_off,
             size: 64,
-            color: const Color(0xFF820815).withValues(alpha: 0.3),
+            color: AppStyles.primary.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
           Text(

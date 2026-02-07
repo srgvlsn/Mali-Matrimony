@@ -97,12 +97,12 @@ class _UserListScreenState extends State<UserListScreen> {
             crossAxisAlignment: WrapCrossAlignment.center,
             alignment: WrapAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 "All Users",
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               ElevatedButton.icon(
@@ -122,9 +122,11 @@ class _UserListScreenState extends State<UserListScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: AppStyles.cardShadow,
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(AppStyles.radiusL),
+                boxShadow: Theme.of(context).brightness == Brightness.dark
+                    ? []
+                    : AppStyles.cardShadow,
               ),
               clipBehavior: Clip.antiAlias,
               child: SingleChildScrollView(
@@ -132,15 +134,17 @@ class _UserListScreenState extends State<UserListScreen> {
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
                     headingRowColor: WidgetStateProperty.all(
-                      AppStyles.primary.withValues(alpha: 0.05),
+                      Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.1),
                     ),
-                    columns: const [
+                    columns: [
                       DataColumn(
                         label: Text(
                           "Name",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppStyles.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -149,7 +153,7 @@ class _UserListScreenState extends State<UserListScreen> {
                           "Age / Gender",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppStyles.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -158,7 +162,7 @@ class _UserListScreenState extends State<UserListScreen> {
                           "Caste",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppStyles.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -167,7 +171,7 @@ class _UserListScreenState extends State<UserListScreen> {
                           "Status",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppStyles.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -176,7 +180,7 @@ class _UserListScreenState extends State<UserListScreen> {
                           "Payment",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppStyles.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -185,7 +189,7 @@ class _UserListScreenState extends State<UserListScreen> {
                           "Joined",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppStyles.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -194,7 +198,7 @@ class _UserListScreenState extends State<UserListScreen> {
                           "Actions",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppStyles.primary,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -238,15 +242,23 @@ class _UserListScreenState extends State<UserListScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: user.isVerified
+                                color: !user.isActive
+                                    ? Colors.black.withValues(alpha: 0.1)
+                                    : user.isVerified
                                     ? Colors.green.withValues(alpha: 0.1)
                                     : Colors.orange.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(100),
                               ),
                               child: Text(
-                                user.isVerified ? "Verified" : "Pending",
+                                !user.isActive
+                                    ? "Blocked"
+                                    : user.isVerified
+                                    ? "Verified"
+                                    : "Pending",
                                 style: TextStyle(
-                                  color: user.isVerified
+                                  color: !user.isActive
+                                      ? Colors.black87
+                                      : user.isVerified
                                       ? Colors.green
                                       : Colors.orange,
                                   fontSize: 12,
@@ -311,21 +323,97 @@ class _UserListScreenState extends State<UserListScreen> {
                                   tooltip: "Edit User",
                                 ),
                                 IconButton(
-                                  icon: const Icon(
-                                    Icons.block,
-                                    color: Colors.red,
+                                  icon: Icon(
+                                    user.isActive
+                                        ? Icons.block
+                                        : Icons.check_circle_outline,
+                                    color: user.isActive
+                                        ? Colors.red
+                                        : Colors.green,
                                   ),
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          "${user.name} has been blocked",
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: Text(
+                                          user.isActive
+                                              ? "Block User?"
+                                              : "Unblock User?",
                                         ),
-                                        backgroundColor: Colors.red,
+                                        content: Text(
+                                          user.isActive
+                                              ? "Are you sure you want to block ${user.name}? They will not be able to interact with others."
+                                              : "Restore ${user.name}'s account access?",
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(ctx, false),
+                                            child: const Text("CANCEL"),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(ctx, true),
+                                            child:
+                                                TextTheme.of(
+                                                      context,
+                                                    ).labelLarge?.color !=
+                                                    null
+                                                ? Text(
+                                                    user.isActive
+                                                        ? "BLOCK"
+                                                        : "UNBLOCK",
+                                                    style: TextStyle(
+                                                      color: user.isActive
+                                                          ? Colors.red
+                                                          : Colors.green,
+                                                    ),
+                                                  )
+                                                : Text(
+                                                    user.isActive
+                                                        ? "BLOCK"
+                                                        : "UNBLOCK",
+                                                  ),
+                                          ),
+                                        ],
                                       ),
                                     );
+
+                                    if (confirm == true) {
+                                      if (user.isActive) {
+                                        await AdminService.instance.blockUser(
+                                          user.id,
+                                        );
+                                      } else {
+                                        // Unblock is just copyWith(isActive: true)
+                                        final updated = user.copyWith(
+                                          isActive: true,
+                                        );
+                                        await AdminService.instance.updateUser(
+                                          updated,
+                                        );
+                                      }
+                                      await _loadUsers();
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            user.isActive
+                                                ? "${user.name} Blocked"
+                                                : "${user.name} Unblocked",
+                                          ),
+                                          backgroundColor: user.isActive
+                                              ? Colors.red
+                                              : Colors.green,
+                                        ),
+                                      );
+                                    }
                                   },
-                                  tooltip: "Block User",
+                                  tooltip: user.isActive
+                                      ? "Block User"
+                                      : "Unblock User",
                                 ),
                               ],
                             ),

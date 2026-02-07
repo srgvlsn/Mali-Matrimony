@@ -155,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF820815),
+                              color: AppStyles.primary,
                             ),
                           ),
                         ),
@@ -165,7 +165,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(50),
+                            borderRadius: BorderRadius.circular(
+                              AppStyles.radiusFull,
+                            ),
                           ),
                           child: Row(
                             children: [
@@ -206,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               padding: EdgeInsets.only(top: 8),
                               child: Text(
                                 "We will send an OTP to your phone.",
-                                style: TextStyle(color: Color(0xFF820815)),
+                                style: TextStyle(color: AppStyles.primary),
                               ),
                             ),
                         ] else
@@ -241,11 +243,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF820815),
+                              backgroundColor: AppStyles.primary,
                               foregroundColor: const Color(0xFFFFD1C8),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(100),
+                                borderRadius: BorderRadius.circular(
+                                  AppStyles.radiusFull,
+                                ),
                               ),
                             ),
                             onPressed: _isLoading ? null : _handleLogin,
@@ -273,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         RichText(
                           text: TextSpan(
                             style: const TextStyle(
-                              color: Color(0xFF820815),
+                              color: AppStyles.primary,
                               fontSize: 14,
                             ),
                             children: [
@@ -323,16 +327,14 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isActive ? const Color(0xFF820815) : Colors.transparent,
-            borderRadius: BorderRadius.circular(50),
+            color: isActive ? AppStyles.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppStyles.radiusFull),
           ),
           child: Text(
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isActive
-                  ? const Color(0xFFFFD1C8)
-                  : const Color(0xFF820815),
+              color: isActive ? const Color(0xFFFFD1C8) : AppStyles.primary,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -363,7 +365,7 @@ class _LoginScreenState extends State<LoginScreen> {
         suffixIcon: IconButton(
           icon: Icon(
             _obscurePassword ? Icons.visibility_off : Icons.visibility,
-            color: const Color(0xFF820815),
+            color: AppStyles.primary,
           ),
           onPressed: () {
             setState(() {
@@ -384,14 +386,14 @@ class _LoginScreenState extends State<LoginScreen> {
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF820815)),
+      labelStyle: const TextStyle(color: AppStyles.primary),
       enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815)),
-        borderRadius: BorderRadius.circular(100),
+        borderSide: const BorderSide(color: AppStyles.primary),
+        borderRadius: BorderRadius.circular(AppStyles.radiusFull),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815), width: 2),
-        borderRadius: BorderRadius.circular(100),
+        borderSide: const BorderSide(color: AppStyles.primary, width: 2),
+        borderRadius: BorderRadius.circular(AppStyles.radiusFull),
       ),
     );
   }

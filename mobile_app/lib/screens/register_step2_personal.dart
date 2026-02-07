@@ -65,7 +65,9 @@ class _RegisterStep2PersonalState extends State<RegisterStep2Personal> {
                           minHeight: 6,
                           backgroundColor: const Color(0xFFFFB8AB),
                           color: Theme.of(context).colorScheme.primary,
-                          borderRadius: BorderRadius.circular(100),
+                          borderRadius: BorderRadius.circular(
+                            AppStyles.radiusFull,
+                          ),
                         ),
 
                         const SizedBox(height: 32),

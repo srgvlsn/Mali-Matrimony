@@ -7,6 +7,12 @@ class DateFormatter {
     return DateFormat('dd/MM/yyyy').format(date);
   }
 
+  /// Format: 14 February 1999
+  static String formatFullDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return DateFormat('d MMMM yyyy').format(date);
+  }
+
   /// Format: 20th February 2002, Wednesday
   static String formatLongDate(DateTime? date) {
     if (date == null) return 'N/A';

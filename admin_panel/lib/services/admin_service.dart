@@ -6,7 +6,10 @@ class AdminService {
 
   /// Retrieve full user list from PostgreSQL
   Future<List<UserProfile>> getUsers() async {
-    final response = await BackendService.instance.getAllProfiles();
+    // Admin needs to see even blocked users
+    final response = await BackendService.instance.getAllProfiles(
+      includeInactive: true,
+    );
     return response.data ?? [];
   }
 
@@ -42,9 +45,18 @@ class AdminService {
     }
   }
 
-  /// Reject a user
-  void rejectUser(String userId) {
-    // Implement logic if needed
+  /// Reject a user (deletes profile)
+  Future<void> rejectUser(String userId) async {
+    await BackendService.instance.deleteProfile(userId);
+  }
+
+  /// Block a user
+  Future<void> blockUser(String userId) async {
+    final response = await BackendService.instance.getProfile(userId);
+    if (response.success && response.data != null) {
+      final updated = response.data!.copyWith(isActive: false);
+      await BackendService.instance.updateProfile(updated);
+    }
   }
 
   /// Get Analytics data from backend

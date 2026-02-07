@@ -71,7 +71,9 @@ class _RegisterStep1AccountState extends State<RegisterStep1Account> {
                             0xFFFFB8AB,
                           ), // Keep specific color if not in theme
                           color: Theme.of(context).colorScheme.primary,
-                          borderRadius: BorderRadius.circular(100),
+                          borderRadius: BorderRadius.circular(
+                            AppStyles.radiusFull,
+                          ),
                         ),
 
                         const SizedBox(height: 32),

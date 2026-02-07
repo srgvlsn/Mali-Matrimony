@@ -89,7 +89,7 @@ class NotificationBadge extends StatelessWidget {
                 ),
                 child: Material(
                   color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: BorderRadius.circular(32),
+                  borderRadius: BorderRadius.circular(AppStyles.radiusL),
                   elevation: 8,
                   child: Consumer<NotificationService>(
                     builder: (context, notificationService, child) {
@@ -222,7 +222,9 @@ class NotificationBadge extends StatelessWidget {
   ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
+      ),
       elevation: 0,
       color: notification.isRead
           ? Colors.white.withValues(alpha: 0.6)

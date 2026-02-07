@@ -139,7 +139,9 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                               minHeight: 6,
                               backgroundColor: const Color(0xFFFFB8AB),
                               color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(100),
+                              borderRadius: BorderRadius.circular(
+                                AppStyles.radiusFull,
+                              ),
                             ),
                             const SizedBox(height: 32),
 
@@ -232,7 +234,7 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                                         children: [
                                           ClipRRect(
                                             borderRadius: BorderRadius.circular(
-                                              20,
+                                              AppStyles.radiusM,
                                             ),
                                             child: Image.file(
                                               _additionalImages[index],
@@ -289,7 +291,9 @@ class _RegisterStep5ProfileState extends State<RegisterStep5Profile> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(
+                                    AppStyles.radiusS,
+                                  ),
                                   child: Image.file(
                                     _horoscopeImage!,
                                     height: 80,

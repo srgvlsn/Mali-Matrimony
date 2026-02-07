@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.9] - 2026-02-07
+### Added
+- **Settings & Privacy**: Implemented dedicated Settings and Privacy screens in the mobile app with backend support for user preferences.
+- **Chat Enhancements**: Introduced "Archived" and "Blocked" conversation categories with dedicated management screens.
+- **Admin Theme Service**: Implemented `AdminThemeService` in the admin panel for centralized UI state management.
+
+### Changed
+- **UI Standardization**: Unified corner radius to 28.0/30.0 across all mobile and admin components for a premium look.
+- **Backend Model Sync**: Refined SQLAlchemy models and Pydantic schemas to ensure 100% alignment with the registration flow.
+- **Admin Panel Refinement**: Updated sidebar and dashboard layouts to improve navigation and information hierarchy.
+
+### Fixed
+- **Python Imports**: Resolved persistent "Could not find import" errors for core libraries in the backend.
+- **Admin Service Mappings**: Fixed service name discrepancies in the admin panel to ensure seamless backend integration.
+
 ## [0.6.8] - 2026-02-04
 ### Added
 - **Premium Experience Refinement**: Implemented a specialized "Premium Membership Active" notification with type-specific logic.

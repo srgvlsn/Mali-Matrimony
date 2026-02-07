@@ -27,7 +27,26 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   @override
   void initState() {
     super.initState();
+    ProfileService.instance.addListener(_onProfileServiceUpdate);
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    ProfileService.instance.removeListener(_onProfileServiceUpdate);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onProfileServiceUpdate() {
+    if (!mounted) return;
+    final updated = ProfileService.instance.getProfileById(widget.userId);
+    if (updated != null) {
+      setState(() {
+        profile = updated;
+        isShortlisted = ProfileService.instance.isShortlisted(widget.userId);
+      });
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -74,9 +93,24 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   const SectionTitle(title: 'About Me'),
                   ContentCard(text: profile.bio),
                   const SizedBox(height: 24),
+                  if (profile.partnerPreferences.isNotEmpty) ...[
+                    const SectionTitle(title: 'Partner Preference'),
+                    ContentCard(text: profile.partnerPreferences),
+                    const SizedBox(height: 24),
+                  ],
                   const SectionTitle(title: 'Personal Details'),
                   _buildPersonalDetailsSection(),
                   const SizedBox(height: 24),
+                  if ((profile.showPhone &&
+                          profile.phone != null &&
+                          profile.phone!.isNotEmpty) ||
+                      (profile.showEmail &&
+                          profile.email != null &&
+                          profile.email!.isNotEmpty)) ...[
+                    const SectionTitle(title: 'Contact Details'),
+                    _buildContactDetailsSection(),
+                    const SizedBox(height: 24),
+                  ],
                   const SectionTitle(title: 'Education & Career'),
                   _buildEducationCareerSection(),
                   const SizedBox(height: 24),
@@ -85,6 +119,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                   const SizedBox(height: 24),
                   const SectionTitle(title: 'Community'),
                   _buildCommunitySection(),
+                  const SizedBox(height: 24),
+                  const SectionTitle(title: 'Languages'),
+                  _buildLanguagesSection(),
                   const SizedBox(height: 24),
                   const SectionTitle(title: 'Horoscope'),
                   _buildHoroscopeSection(),
@@ -204,11 +241,58 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         const SizedBox(height: 8),
         Row(
           children: [
-            StatChip(label: '${profile.age} yrs'),
-            StatChip(label: '${profile.height.toInt()} cm'),
-            StatChip(label: profile.location.split(',')[0]),
+            StatChip(
+              label: '',
+              icon: profile.gender == Gender.male ? Icons.male : Icons.female,
+            ),
+            StatChip(label: '${profile.age} yrs', icon: Icons.cake),
+            StatChip(label: '${profile.height.toInt()} cm', icon: Icons.height),
+            StatChip(
+              label: profile.location.split(',')[0],
+              icon: Icons.location_on,
+            ),
           ],
         ),
+      ],
+    );
+  }
+
+  Widget _buildPersonalDetailsSection() {
+    return DetailListCard(
+      items: [
+        {
+          'label': 'Date of Birth',
+          'value': profile.dob != null
+              ? DateFormatter.formatFullDate(profile.dob!)
+              : 'N/A',
+          'icon': Icons.cake,
+        },
+        {
+          'label': 'Gender',
+          'value': profile.gender == Gender.male ? 'Male' : 'Female',
+          'icon': profile.gender == Gender.male ? Icons.male : Icons.female,
+        },
+        {
+          'label': 'Marital Status',
+          'value': profile.maritalStatus.displayValue,
+          'icon': Icons.favorite,
+        },
+        {
+          'label': 'Location',
+          'value': profile.location,
+          'icon': Icons.location_on,
+        },
+      ],
+    );
+  }
+
+  Widget _buildContactDetailsSection() {
+    return DetailListCard(
+      items: [
+        if (profile.showPhone && profile.phone != null)
+          {'label': 'Phone', 'value': profile.phone!, 'icon': Icons.phone},
+        if (profile.showEmail && profile.email != null)
+          {'label': 'Email', 'value': profile.email!, 'icon': Icons.email},
       ],
     );
   }
@@ -256,30 +340,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
           'value': profile.siblings == 0 ? 'None' : '${profile.siblings}',
           'icon': Icons.group,
         },
-      ],
-    );
-  }
-
-  Widget _buildPersonalDetailsSection() {
-    return DetailListCard(
-      items: [
-        {
-          'label': 'Date of Birth',
-          'value': profile.dob != null
-              ? DateFormatter.formatShortDate(profile.dob)
-              : 'N/A',
-          'icon': Icons.cake,
-        },
-        {
-          'label': 'Gender',
-          'value': profile.gender.name.toUpperCase(),
-          'icon': Icons.person,
-        },
-        {
-          'label': 'Marital Status',
-          'value': profile.maritalStatus.displayValue,
-          'icon': Icons.favorite,
-        },
+        if (profile.hometown != null && profile.hometown!.isNotEmpty)
+          {'label': 'Hometown', 'value': profile.hometown!, 'icon': Icons.home},
       ],
     );
   }
@@ -298,6 +360,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             'value': profile.subCaste!,
             'icon': Icons.people_outline,
           },
+      ],
+    );
+  }
+
+  Widget _buildLanguagesSection() {
+    return DetailListCard(
+      items: [
         {
           'label': 'Mother Tongue',
           'value': profile.motherTongue,
@@ -305,12 +374,10 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         },
         if (profile.languages.isNotEmpty)
           {
-            'label': 'Languages',
+            'label': 'Other Languages',
             'value': profile.languages.join(', '),
             'icon': Icons.translate,
           },
-        if (profile.hometown != null && profile.hometown!.isNotEmpty)
-          {'label': 'Hometown', 'value': profile.hometown!, 'icon': Icons.home},
       ],
     );
   }
@@ -326,7 +393,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
         width: double.infinity,
         height: 200,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(AppStyles.radiusL),
           image: DecorationImage(
             image: NetworkImage(
               ApiService.instance.resolveUrl(profile.horoscopeImageUrl!),
@@ -352,8 +419,8 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
+                    bottomLeft: Radius.circular(AppStyles.radiusL),
+                    bottomRight: Radius.circular(AppStyles.radiusL),
                   ),
                 ),
                 child: const Center(
@@ -435,8 +502,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {
-                    ProfileService.instance.toggleShortlist(widget.userId);
+                  onPressed: () async {
+                    await ProfileService.instance.toggleShortlist(
+                      widget.userId,
+                    );
+                    if (!context.mounted) return;
                     setState(() {
                       isShortlisted = ProfileService.instance.isShortlisted(
                         widget.userId,
@@ -462,7 +532,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         : Colors.transparent,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(AppStyles.radiusL),
                     ),
                   ),
                   child: Text(
@@ -530,7 +600,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
                         : Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(AppStyles.radiusL),
                     ),
                   ),
                   child: _isSendingInterest

@@ -256,9 +256,14 @@ class BackendService {
     }
   }
 
-  Future<ApiResponse<List<UserProfile>>> getAllProfiles() async {
+  Future<ApiResponse<List<UserProfile>>> getAllProfiles({
+    bool includeInactive = false,
+  }) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/profiles'));
+      final uri = Uri.parse('$_baseUrl/profiles').replace(
+        queryParameters: includeInactive ? {'include_inactive': 'true'} : null,
+      );
+      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -741,6 +746,26 @@ class BackendService {
       }
     } catch (e) {
       return ApiResponse.error('Failed to upload attachment: $e');
+    }
+  }
+
+  Future<ApiResponse<void>> markChatAsRead(
+    String userId,
+    String otherUserId,
+  ) async {
+    try {
+      final uri = Uri.parse('$_baseUrl/chat/read').replace(
+        queryParameters: {'user_id': userId, 'other_user_id': otherUserId},
+      );
+      final response = await http.post(uri);
+
+      if (response.statusCode == 200) {
+        return ApiResponse.success(null);
+      } else {
+        return ApiResponse.error('Failed to mark chat as read');
+      }
+    } catch (e) {
+      return ApiResponse.error('Failed to mark chat as read: $e');
     }
   }
 }

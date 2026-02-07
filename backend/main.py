@@ -7,7 +7,8 @@ import uvicorn
 import os
 import shutil
 import uuid
-from datetime import datetime
+import asyncio
+from datetime import datetime, timedelta, timezone
 
 from . import models, schemas, database
 from .database import engine, get_db
@@ -18,7 +19,7 @@ from pydantic import BaseModel
 # Create tables
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Mali Matrimony API", version="0.6.8")
+app = FastAPI(title="Mali Matrimony API", version="0.6.9")
 
 # Mount uploads directory to serve images
 os.makedirs("backend/uploads", exist_ok=True)
@@ -110,7 +111,103 @@ class OTPVerify(BaseModel):
 # In-memory OTP store (for demo purposes)
 otp_store = {}
 
-# ... existing code ...
+async def check_premium_expiries():
+    """
+    Background task to check for premium expiries and send reminders.
+    Runs every hour.
+    """
+    while True:
+        try:
+            db = database.SessionLocal()
+            now = datetime.now(timezone.utc)
+            
+            # Find all premium users
+            premium_users = db.query(models.User).filter(
+                models.User.is_premium == True,
+                models.User.premium_expiry_date != None
+            ).all()
+            
+            for user in premium_users:
+                expiry = user.premium_expiry_date
+                time_left = expiry - now
+                
+                reminder_type = None
+                message = None
+                
+                # Expiry Check
+                if time_left.total_seconds() <= 0:
+                    # Downgrade user
+                    user.is_premium = False
+                    user.premium_expiry_date = None
+                    user.last_premium_reminder = 'expired'
+                    
+                    # Notify user
+                    new_notif = models.Notification(
+                        id=str(uuid.uuid4()),
+                        user_id=user.id,
+                        title="Premium Membership Expired",
+                        message="Your premium membership has expired. Upgrade now to continue enjoying premium benefits!",
+                        type="system"
+                    )
+                    db.add(new_notif)
+                    
+                    # Push real-time update
+                    await manager.send_personal_message(
+                        {"type": "profile_updated", "user_id": user.id},
+                        user.id
+                    )
+                
+                # Reminder Checks (only if not already sent for this interval)
+                elif time_left <= timedelta(days=1) and user.last_premium_reminder != '1d':
+                    reminder_type = '1d'
+                    message = "Your premium membership expires in 1 day! Renew now to stay premium."
+                elif time_left <= timedelta(days=2) and user.last_premium_reminder not in ['1d', '2d']:
+                    reminder_type = '2d'
+                    message = "Your premium membership expires in 2 days. Don't forget to renew!"
+                elif time_left <= timedelta(days=3) and user.last_premium_reminder not in ['1d', '2d', '3d']:
+                    reminder_type = '3d'
+                    message = "Your premium membership expires in 3 days. Renew now!"
+                elif time_left <= timedelta(days=7) and user.last_premium_reminder not in ['1d', '2d', '3d', '7d']:
+                    reminder_type = '7d'
+                    message = "Your premium membership expires in 1 week."
+                elif time_left <= timedelta(days=14) and user.last_premium_reminder not in ['1d', '2d', '3d', '7d', '14d']:
+                    reminder_type = '14d'
+                    message = "Your premium membership expires in 2 weeks."
+                elif time_left <= timedelta(days=30) and user.last_premium_reminder not in ['1d', '2d', '3d', '7d', '14d', '30d']:
+                    reminder_type = '30d'
+                    message = "Your premium membership expires in 1 month. Plan ahead!"
+                
+                if reminder_type and message:
+                    user.last_premium_reminder = reminder_type
+                    new_notif = models.Notification(
+                        id=str(uuid.uuid4()),
+                        user_id=user.id,
+                        title="Premium Renewal Reminder",
+                        message=message,
+                        type="system"
+                    )
+                    db.add(new_notif)
+                    
+                    # Push real-time update
+                    await manager.send_personal_message(
+                        {"type": "new_notification", "title": "Premium Renewal Reminder"},
+                        user.id
+                    )
+            
+            db.commit()
+            db.close()
+            
+        except Exception as e:
+            print(f"Error in premium expiry check task: {e}")
+            
+        # Wait for 1 hour before next check
+        # For testing purposes, you could reduce this, but 1 hour is reasonable for production.
+        await asyncio.sleep(3600)
+
+@app.on_event("startup")
+async def startup_event():
+    # Start background task
+    asyncio.create_task(check_premium_expiries())
 
 @app.get("/")
 def read_root():
@@ -251,7 +348,7 @@ async def register_user(user: schemas.UserCreate, db: Session = Depends(get_db))
             "type": "user_registered",
             "user_id": new_user.id,
             "user_name": new_user.name,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
         
         return schemas.ApiResponse(
@@ -292,7 +389,7 @@ def login_user(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
 
 @app.get("/analytics", response_model=schemas.AnalyticsResponse)
 def get_analytics(db: Session = Depends(get_db)):
-    from datetime import datetime, timedelta
+
     
     # Total users
     total_users = db.query(models.User).count()
@@ -307,7 +404,7 @@ def get_analytics(db: Session = Depends(get_db)):
     pending_verification = db.query(models.User).filter(models.User.is_verified == False).count()
     
     # Recent registrations (last 7 days)
-    seven_days_ago = datetime.now() - timedelta(days=7)
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     recent_registrations = db.query(models.User).filter(
         models.User.created_at >= seven_days_ago
     ).count()
@@ -329,8 +426,11 @@ def get_analytics(db: Session = Depends(get_db)):
 # ==================== Profile API ====================
 
 @app.get("/profiles", response_model=schemas.ApiResponse)
-def get_all_profiles(db: Session = Depends(get_db)):
-    users = db.query(models.User).all()
+def get_all_profiles(include_inactive: bool = False, db: Session = Depends(get_db)):
+    query = db.query(models.User)
+    if not include_inactive:
+        query = query.filter(models.User.is_active == True)
+    users = query.all()
     user_data = [schemas.UserResponse.model_validate(u).model_dump() for u in users]
     return schemas.ApiResponse(
         status="success",
@@ -351,23 +451,32 @@ async def get_profile(user_id: str, viewer_id: Optional[str] = None, db: Session
             # Increment view count
             user.view_count += 1
             
-            # Create notification for the profile owner
-            new_notif = models.Notification(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                title="Profile Viewed",
-                message=f"{viewer.name} viewed your profile!",
-                type="profileView",
-                related_user_id=viewer_id
-            )
-            db.add(new_notif)
-            db.commit()
+            # Check if viewer has already notified this user (Deduplication)
+            existing_notif = db.query(models.Notification).filter(
+                models.Notification.user_id == user_id,
+                models.Notification.type == "profileView",
+                models.Notification.related_user_id == viewer_id
+            ).first()
+
+            if not existing_notif:
+                # Create notification for the profile owner
+                new_notif = models.Notification(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    title="Profile Viewed",
+                    message=f"{viewer.name} viewed your profile!",
+                    type="profileView",
+                    related_user_id=viewer_id
+                )
+                db.add(new_notif)
+                
+                # Push real-time update
+                await manager.send_personal_message(
+                    {"type": "new_notification", "title": "Profile Viewed"},
+                    user_id
+                )
             
-            # Push real-time update
-            await manager.send_personal_message(
-                {"type": "new_notification", "title": "Profile Viewed"},
-                user_id
-            )
+            db.commit()
     
     return schemas.ApiResponse(
         status="success",
@@ -385,6 +494,10 @@ async def get_user_analytics(user_id: str, db: Session = Depends(get_db)):
         models.Interest.receiver_id == user_id,
         models.Interest.status == "pending"
     ).count()
+
+    interests_sent = db.query(models.Interest).filter(
+        models.Interest.sender_id == user_id
+    ).count()
     
     shortlisted_by = db.query(models.Shortlist).filter(
         models.Shortlist.shortlisted_user_id == user_id
@@ -393,7 +506,8 @@ async def get_user_analytics(user_id: str, db: Session = Depends(get_db)):
     analytics = schemas.UserAnalytics(
         total_views=user.view_count,
         interests_received=interests_received,
-        shortlisted_by=shortlisted_by
+        shortlisted_by=shortlisted_by,
+        interests_sent=interests_sent
     )
     
     return schemas.ApiResponse(
@@ -438,14 +552,25 @@ async def update_profile(user_id: str, user_update: schemas.UserBase, db: Sessio
     if 'is_premium' in update_data:
         if update_data['is_premium'] and not db_user.is_premium:
             # User upgraded to premium
-            new_notif = models.Notification(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                title="Premium Membership Active",
-                message="You are a premium member now.... enjoy.....",
-                type="premiumMembership"
-            )
-            db.add(new_notif)
+            # Check for existing premium notification to deduplicate
+            existing_premium_notif = db.query(models.Notification).filter(
+                models.Notification.user_id == user_id,
+                models.Notification.type == "premiumMembership"
+            ).first()
+
+            if not existing_premium_notif:
+                new_notif = models.Notification(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    title="Premium Membership Active",
+                    message="You are a premium member now.... enjoy.....",
+                    type="premiumMembership"
+                )
+                db.add(new_notif)
+            
+            # Reset reminders on new/renewed premium
+            db_user.last_premium_reminder = None
+            
             # Push real-time update
             await manager.send_personal_message(
                 {"type": "new_notification", "title": "Premium Membership Active"},
@@ -457,7 +582,7 @@ async def update_profile(user_id: str, user_update: schemas.UserBase, db: Sessio
                 "type": "payment_completed",
                 "user_id": user_id,
                 "user_name": db_user.name,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             })
 
     for key, value in update_data.items():
@@ -474,7 +599,8 @@ async def update_profile(user_id: str, user_update: schemas.UserBase, db: Sessio
     await manager.broadcast_to_admins({
         "type": "profile_updated",
         "user_id": user_id,
-        "user_name": db_user.name
+        "user_name": db_user.name,
+        "timestamp": datetime.now(timezone.utc).isoformat()
     })
 
     return schemas.ApiResponse(
@@ -495,6 +621,20 @@ async def update_user_settings(user_id: str, settings: schemas.UserSettingsUpdat
     
     db.commit()
     db.refresh(db_user)
+
+    # Broadcast real-time settings update (privacy changes)
+    await manager.broadcast_to_admins({
+        "type": "profile_updated",
+        "user_id": user_id,
+        "user_name": db_user.name,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    # Notify the user themselves
+    await manager.send_personal_message(
+        {"type": "profile_updated", "user_id": user_id},
+        user_id
+    )
+
     return schemas.ApiResponse(
         status="success",
         message="Settings updated",
@@ -581,7 +721,7 @@ async def send_interest(interest: schemas.InterestCreate, db: Session = Depends(
         "type": "interest_sent",
         "sender_id": interest.sender_id,
         "receiver_id": interest.receiver_id,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     })
     
     return schemas.ApiResponse(
@@ -622,8 +762,30 @@ async def update_interest_status(interest_id: str, status: str, db: Session = De
             "type": "interest_accepted",
             "sender_id": interest.sender_id,
             "receiver_id": interest.receiver_id,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
+
+        # IMPROVEMENT: Automatic Chat Initiation
+        # Create a real database message so the conversation is persistent and visible in both screens
+        init_msg = models.ChatMessage(
+            id=str(uuid.uuid4()),
+            sender_id=interest.sender_id,
+            receiver_id=interest.receiver_id,
+            text="You matched! Say Hi 👋",
+            is_read=True
+        )
+        db.add(init_msg)
+        
+        # Push real-time update to both (especially the sender who didn't trigger this)
+        # We wrap in try block to handle cases where they aren't online
+        try:
+            msg_data = schemas.ChatMessageResponse.model_validate(init_msg).model_dump()
+            msg_data["timestamp"] = msg_data["timestamp"].isoformat()
+            payload = {"type": "new_message", "data": msg_data}
+            await manager.send_personal_message(payload, interest.sender_id)
+            await manager.send_personal_message(payload, interest.receiver_id)
+        except Exception as e:
+            print(f"WS Broadcast error: {e}")
     
     db.commit()
     db.refresh(interest)
@@ -740,25 +902,9 @@ def get_conversations(user_id: str, db: Session = Depends(get_db)):
         if other_id not in partners:
             partners[other_id] = msg
 
-    # 2. Get accepted interests (matches)
-    matches = db.query(models.Interest).filter(
-        models.Interest.status == 'accepted',
-        or_(models.Interest.sender_id == user_id, models.Interest.receiver_id == user_id)
-    ).all()
-
-    for match in matches:
-        other_id = match.receiver_id if match.sender_id == user_id else match.sender_id
-        if other_id not in partners:
-            # Create a mock message for new matches
-            mock_msg = models.ChatMessage(
-                id=f"match_{match.id}", # distinct ID prefix
-                sender_id=other_id, # pretend it's from them to prompt reply
-                receiver_id=user_id,
-                text="You matched! Say Hi 👋",
-                timestamp=match.timestamp or datetime.now(), # Use match time
-                is_read=True # Don't show as unread badge
-            )
-            partners[other_id] = mock_msg
+    # 2. Match-based logic is now simplified because we create a real message on match
+    # No more mock messages needed here.
+    # We still fetch partners from actual messages above.
 
     conversations = []
     for other_id, last_msg in partners.items():
@@ -779,7 +925,8 @@ def get_conversations(user_id: str, db: Session = Depends(get_db)):
             "other_user_photo": other_user.photos[0] if other_user.photos else None,
             "last_message": last_msg.text,
             "last_message_time": last_msg.timestamp,
-            "unread_count": unread_count
+            "unread_count": unread_count,
+            "is_last_message_me": last_msg.sender_id == user_id
         })
         
     # Re-sort to show latest interactions first (messages or new matches)
@@ -813,6 +960,16 @@ def get_chat_messages(user_id: str, other_user_id: str, db: Session = Depends(ge
     data = [schemas.ChatMessageResponse.model_validate(m).model_dump() for m in messages]
     return schemas.ApiResponse(status="success", message="Messages fetched", data=data)
 
+@app.post("/chat/read", response_model=schemas.ApiResponse)
+def mark_messages_as_read(user_id: str, other_user_id: str, db: Session = Depends(get_db)):
+    db.query(models.ChatMessage).filter(
+        models.ChatMessage.sender_id == other_user_id,
+        models.ChatMessage.receiver_id == user_id,
+        models.ChatMessage.is_read == False
+    ).update({"is_read": True})
+    db.commit()
+    return schemas.ApiResponse(status="success", message="Messages marked as read")
+
 @app.post("/chat/send", response_model=schemas.ApiResponse)
 async def send_message(msg_data: schemas.ChatMessageCreate, sender_id: str, db: Session = Depends(get_db)):
     new_msg = models.ChatMessage(
@@ -827,7 +984,6 @@ async def send_message(msg_data: schemas.ChatMessageCreate, sender_id: str, db: 
     db.commit()
     db.refresh(new_msg)
     
-    from .main import manager # Ensure it's the right manager if needed, but here it's global
     
     # Send via WebSocket
     payload = {

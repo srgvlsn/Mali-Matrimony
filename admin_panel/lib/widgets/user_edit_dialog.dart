@@ -50,6 +50,8 @@ class _UserEditDialogState extends State<UserEditDialog> {
   late MaritalStatus _selectedMaritalStatus;
   late bool _isVerified;
   late bool _isPremium;
+  late bool _showPhone;
+  late bool _showEmail;
   late TextEditingController _premiumExpiryDateController;
 
   @override
@@ -98,6 +100,8 @@ class _UserEditDialogState extends State<UserEditDialog> {
     _selectedMaritalStatus = widget.user.maritalStatus;
     _isVerified = widget.user.isVerified;
     _isPremium = widget.user.isPremium;
+    _showPhone = widget.user.showPhone;
+    _showEmail = widget.user.showEmail;
     _premiumExpiryDateController = TextEditingController(
       text:
           widget.user.premiumExpiryDate?.toIso8601String().split('T').first ??
@@ -161,6 +165,8 @@ class _UserEditDialogState extends State<UserEditDialog> {
           partnerPreferences: _partnerPreferencesController.text,
           isVerified: _isVerified,
           isPremium: _isPremium,
+          showPhone: _showPhone,
+          showEmail: _showEmail,
           premiumExpiryDate: _premiumExpiryDateController.text.isNotEmpty
               ? DateTime.tryParse(_premiumExpiryDateController.text)
               : null,
@@ -198,7 +204,9 @@ class _UserEditDialogState extends State<UserEditDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
+      ),
       child: Container(
         width: 700,
         constraints: const BoxConstraints(maxHeight: 600),
@@ -208,12 +216,12 @@ class _UserEditDialogState extends State<UserEditDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   "Edit User Profile",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppStyles.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 IconButton(
@@ -230,7 +238,7 @@ class _UserEditDialogState extends State<UserEditDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle("Personal Information"),
+                      _buildSectionTitle("Personal Details"),
                       const SizedBox(height: 16),
                       _buildTextField("Name", _nameController, required: true),
                       const SizedBox(height: 12),
@@ -267,7 +275,9 @@ class _UserEditDialogState extends State<UserEditDialog> {
                               items: Gender.values.map((gender) {
                                 return DropdownMenuItem(
                                   value: gender,
-                                  child: Text(gender.name.toUpperCase()),
+                                  child: Text(
+                                    gender == Gender.male ? "Male" : "Female",
+                                  ),
                                 );
                               }).toList(),
                               onChanged: (val) {
@@ -299,72 +309,12 @@ class _UserEditDialogState extends State<UserEditDialog> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      _buildSectionTitle("Contact Information"),
-                      const SizedBox(height: 16),
-                      _buildTextField("Phone", _phoneController),
                       const SizedBox(height: 12),
                       _buildTextField(
-                        "Email",
-                        _emailController,
-                        keyboardType: TextInputType.emailAddress,
+                        "Location (Working City)",
+                        _locationController,
                       ),
                       const SizedBox(height: 24),
-
-                      // Family & Community Details (Step 3 Order)
-                      _buildSectionTitle("Family & Community Details"),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField(
-                              "Father's Name",
-                              _fatherNameController,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildTextField(
-                              "Mother's Name",
-                              _motherNameController,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      _buildTextField(
-                        "Siblings",
-                        _siblingsController,
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildTextField("Caste", _casteController),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildTextField(
-                              "Sub-Caste",
-                              _subCasteController,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      _buildTextField("Mother Tongue", _motherTongueController),
-                      const SizedBox(height: 12),
-                      _buildTextField(
-                        "Languages (Comma separated)",
-                        _languagesController,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildTextField("Home Town", _hometownController),
-
-                      const SizedBox(height: 24),
-
-                      // Education & Career (Step 4 Order)
                       _buildSectionTitle("Education & Career"),
                       const SizedBox(height: 16),
                       _buildTextField("Education", _educationController),
@@ -386,12 +336,90 @@ class _UserEditDialogState extends State<UserEditDialog> {
                         ],
                       ),
                       const SizedBox(height: 12),
+                      _buildTextField("Work Mode", _workModeController),
+                      const SizedBox(height: 24),
+                      _buildSectionTitle("Contact Information"),
+                      const SizedBox(height: 16),
+                      _buildTextField("Phone", _phoneController),
+                      const SizedBox(height: 12),
                       _buildTextField(
-                        "Working City (Location)",
-                        _locationController,
+                        "Email",
+                        _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Family Details
+                      _buildSectionTitle("Family Details"),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              "Father's Name",
+                              _fatherNameController,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTextField(
+                              "Mother's Name",
+                              _motherNameController,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
-                      _buildTextField("Work Mode", _workModeController),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField(
+                              "Siblings",
+                              _siblingsController,
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTextField(
+                              "Home Town",
+                              _hometownController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Community Details
+                      _buildSectionTitle("Community"),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTextField("Caste", _casteController),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildTextField(
+                              "Sub-Caste",
+                              _subCasteController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionTitle("Languages"),
+                      const SizedBox(height: 16),
+                      _buildTextField("Mother Tongue", _motherTongueController),
+                      const SizedBox(height: 12),
+                      _buildTextField(
+                        "Languages (Comma separated)",
+                        _languagesController,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      const SizedBox(height: 12),
 
                       const SizedBox(height: 24),
                       _buildSectionTitle("Bio & Preferences"),
@@ -410,7 +438,22 @@ class _UserEditDialogState extends State<UserEditDialog> {
                         title: const Text("Verified User"),
                         value: _isVerified,
                         onChanged: (val) => setState(() => _isVerified = val),
-                        activeThumbColor: AppStyles.primary,
+                        activeThumbColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionTitle("Privacy Settings"),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text("Show Phone Number"),
+                        value: _showPhone,
+                        onChanged: (val) => setState(() => _showPhone = val),
+                        activeThumbColor: Theme.of(context).colorScheme.primary,
+                      ),
+                      SwitchListTile(
+                        title: const Text("Show Email Address"),
+                        value: _showEmail,
+                        onChanged: (val) => setState(() => _showEmail = val),
+                        activeThumbColor: Theme.of(context).colorScheme.primary,
                       ),
                       const SizedBox(height: 24),
                       _buildSectionTitle("Premium Status"),
@@ -467,10 +510,10 @@ class _UserEditDialogState extends State<UserEditDialog> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.bold,
-        color: AppStyles.primary,
+        color: Theme.of(context).colorScheme.primary,
       ),
     );
   }

@@ -19,14 +19,14 @@ class QuickActionCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppStyles.radiusL),
           boxShadow: AppStyles.cardShadow,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppStyles.radiusL),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Row(

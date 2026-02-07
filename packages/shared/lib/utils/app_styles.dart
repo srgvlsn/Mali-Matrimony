@@ -25,6 +25,11 @@ class AppStyles {
     ),
   ];
 
+  static const double radiusS = 16.0;
+  static const double radiusM = 20.0;
+  static const double radiusL = 30.0;
+  static const double radiusFull = 50.0;
+
   // Reuseable Styles
   static ButtonStyle primaryButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: primary,
@@ -40,33 +45,51 @@ class AppStyles {
   );
 
   static ThemeData getThemeData() {
+    return _buildTheme(Brightness.light);
+  }
+
+  static ThemeData getDarkThemeData() {
+    return _buildTheme(Brightness.dark);
+  }
+
+  static ThemeData _buildTheme(Brightness brightness) {
+    final bool isDark = brightness == Brightness.dark;
+    final Color bgColor = isDark ? const Color(0xFF0F0F0F) : background;
+    final Color surfaceColor = isDark ? const Color(0xFF1A1A1A) : surface;
+    final Color textColor = isDark ? Colors.white : primary;
+    final Color primaryColor = isDark ? const Color(0xFFD64D5D) : primary;
+
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: background,
+      brightness: brightness,
+      scaffoldBackgroundColor: bgColor,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primary,
-        primary: primary,
-        onPrimary: background,
-        surface: background,
-        onSurface: primary,
+        brightness: brightness,
+        primary: primaryColor,
+        onPrimary: isDark ? Colors.white : background,
+        surface: surfaceColor,
+        onSurface: textColor,
       ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: primary),
-        bodyMedium: TextStyle(color: primary),
-        bodySmall: TextStyle(color: primary),
-        titleLarge: TextStyle(color: primary, fontWeight: FontWeight.bold),
+      textTheme: TextTheme(
+        bodyLarge: TextStyle(color: textColor),
+        bodyMedium: TextStyle(color: textColor),
+        bodySmall: TextStyle(color: textColor),
+        titleLarge: TextStyle(color: textColor, fontWeight: FontWeight.bold),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        labelStyle: const TextStyle(color: primary),
-        hintStyle: const TextStyle(color: primary),
-        floatingLabelStyle: const TextStyle(color: primary),
+        labelStyle: TextStyle(color: textColor),
+        hintStyle: TextStyle(color: textColor.withValues(alpha: 0.6)),
+        floatingLabelStyle: TextStyle(color: primaryColor),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: const BorderSide(color: primary),
+          borderSide: BorderSide(
+            color: isDark ? textColor.withValues(alpha: 0.3) : primaryColor,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: const BorderSide(color: primary, width: 2),
+          borderSide: BorderSide(color: primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
@@ -77,20 +100,27 @@ class AppStyles {
           borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
       ),
-      textSelectionTheme: const TextSelectionThemeData(
-        cursorColor: primary,
-        selectionColor: Color(0x33820815),
-        selectionHandleColor: primary,
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: primaryColor,
+        selectionColor: primaryColor.withValues(alpha: 0.3),
+        selectionHandleColor: primaryColor,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
-          foregroundColor: background,
+          backgroundColor: primaryColor,
+          foregroundColor: isDark ? Colors.white : background,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(100),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: surfaceColor,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusL),
         ),
       ),
     );

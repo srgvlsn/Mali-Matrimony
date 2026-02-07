@@ -42,7 +42,7 @@ class UserCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppStyles.radiusL),
           boxShadow: AppStyles.cardShadow,
         ),
         child: Column(
@@ -51,7 +51,7 @@ class UserCard extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
+                  top: Radius.circular(AppStyles.radiusL),
                 ),
                 child: Image.network(
                   ApiService.instance.resolveUrl(
@@ -122,7 +122,9 @@ class UserCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
+      ),
       color: Colors.white,
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),

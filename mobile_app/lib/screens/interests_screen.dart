@@ -7,6 +7,8 @@ import 'profile_detail_screen.dart';
 import 'payment_screen.dart';
 import '../services/auth_service.dart';
 import '../widgets/notification_badge.dart';
+import '../services/chat_service.dart';
+import 'chat_detail_screen.dart';
 
 class InterestsScreen extends StatelessWidget {
   const InterestsScreen({super.key});
@@ -39,12 +41,12 @@ class InterestsScreen extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(100),
+                borderRadius: BorderRadius.circular(AppStyles.radiusFull),
                 boxShadow: AppStyles.cardShadow,
               ),
               child: TabBar(
                 indicator: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100),
+                  borderRadius: BorderRadius.circular(AppStyles.radiusFull),
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 labelColor: Colors.white,
@@ -163,11 +165,11 @@ class _InterestCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
         boxShadow: AppStyles.cardShadow,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
         child: InkWell(
           onTap: () {
             final authService = Provider.of<AuthService>(
@@ -267,6 +269,26 @@ class _InterestCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                if (isReceived && interest.status == InterestStatus.accepted)
+                  _buildIconButton(
+                    icon: Icons.chat_bubble_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                    onPressed: () {
+                      final chatService = context.read<ChatService>();
+                      final conversation = chatService.startConversation(
+                        profile.id,
+                        profile.name,
+                        profile.photos.isNotEmpty ? profile.photos[0] : null,
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ChatDetailScreen(conversation: conversation),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
           ),
@@ -317,7 +339,7 @@ class _InterestCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: BorderRadius.circular(AppStyles.radiusFull),
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(

@@ -42,7 +42,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppStyles.radiusL),
+        ),
       ),
       builder: (context) => SafeArea(
         child: Column(
@@ -262,7 +264,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: Colors.green.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppStyles.radiusM),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -370,46 +372,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                 },
-                {
-                  "label": "Location",
-                  "value": profile.location,
-                  "onEdit": () => _editField(
-                    "Location",
-                    "City, State",
-                    profile.location,
-                    (val) async {
-                      final updated = profile.copyWith(location: val);
-                      await context.read<ProfileService>().updateProfile(
-                        updated,
-                      );
-                      authService.refresh();
-                    },
-                  ),
-                },
-                {
-                  "label": "Mother Tongue",
-                  "value": profile.motherTongue,
-                  "onEdit": () => _editField(
-                    "Mother Tongue",
-                    "Language",
-                    profile.motherTongue,
-                    (val) async {
-                      final updated = profile.copyWith(motherTongue: val);
-                      await context.read<ProfileService>().updateProfile(
-                        updated,
-                      );
-                      authService.refresh();
-                    },
-                  ),
-                },
               ]),
               const SizedBox(height: 24),
               _buildDetailSection("Personal Details", [
-                {"label": "Gender", "value": profile.gender.name.toUpperCase()},
+                {
+                  "label": "Gender",
+                  "value": profile.gender == Gender.male ? 'Male' : 'Female',
+                },
                 {
                   "label": "Date of Birth",
                   "value": profile.dob != null
-                      ? DateFormatter.formatShortDate(profile.dob!)
+                      ? DateFormatter.formatFullDate(profile.dob!)
                       : "Not set",
                   "onEdit": () async {
                     final date = await showDatePicker(
@@ -420,13 +393,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     );
                     if (date != null) {
                       final updated = profile.copyWith(dob: date);
-                      // Recalculate Age? Backend/Model usually handles this derived field,
-                      // but for now we trust the model's age calc or pass it if needed.
-                      // Actually UserProfile has 'age' field. We should probably update that too or let backend do it.
-                      // Simple fix: Update DOB. Backend should recalc age if it stores it.
-                      // The app logic calc age from DOB usually.
-                      // Let's check UserProfile.fromMap - it reads 'age'.
-                      // We'll update DOB and Age.
                       final now = DateTime.now();
                       final age = now.year - date.year;
 
@@ -441,14 +407,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   },
                 },
                 {
-                  "label": "Hometown",
-                  "value": profile.hometown ?? "Not provided",
+                  "label": "Location",
+                  "value": profile.location,
                   "onEdit": () => _editField(
-                    "Hometown",
+                    "Location",
                     "City, State",
-                    profile.hometown ?? "",
+                    profile.location,
                     (val) async {
-                      final updated = profile.copyWith(hometown: val);
+                      final updated = profile.copyWith(location: val);
                       await context.read<ProfileService>().updateProfile(
                         updated,
                       );
@@ -483,39 +449,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 },
               ]),
               const SizedBox(height: 24),
-              _buildDetailSection("Community & Education", [
-                {
-                  "label": "Caste",
-                  "value": profile.caste ?? "Not provided",
-                  "onEdit": () => _editField(
-                    "Caste",
-                    "Caste",
-                    profile.caste ?? "",
-                    (val) async {
-                      final updated = profile.copyWith(caste: val);
-                      await context.read<ProfileService>().updateProfile(
-                        updated,
-                      );
-                      authService.refresh();
-                    },
-                  ),
-                },
-                {
-                  "label": "Sub-Caste",
-                  "value": profile.subCaste ?? "Not provided",
-                  "onEdit": () => _editField(
-                    "Sub-Caste",
-                    "Sub-Caste",
-                    profile.subCaste ?? "",
-                    (val) async {
-                      final updated = profile.copyWith(subCaste: val);
-                      await context.read<ProfileService>().updateProfile(
-                        updated,
-                      );
-                      authService.refresh();
-                    },
-                  ),
-                },
+              _buildDetailSection("Education & Career", [
                 {
                   "label": "Education",
                   "value": profile.education,
@@ -621,6 +555,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                 },
                 {
+                  "label": "Hometown",
+                  "value": profile.hometown ?? "Not provided",
+                  "onEdit": () => _editField(
+                    "Hometown",
+                    "City, Country",
+                    profile.hometown ?? "",
+                    (val) async {
+                      final updated = profile.copyWith(hometown: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
+                {
                   "label": "Siblings",
                   "value": profile.siblings.toString(),
                   "onEdit": () => _editField(
@@ -638,6 +588,82 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       }
                     },
                     keyboardType: TextInputType.number,
+                  ),
+                },
+              ]),
+              const SizedBox(height: 24),
+              _buildDetailSection("Community", [
+                {
+                  "label": "Caste",
+                  "value": profile.caste ?? "Not provided",
+                  "onEdit": () => _editField(
+                    "Caste",
+                    "Caste",
+                    profile.caste ?? "",
+                    (val) async {
+                      final updated = profile.copyWith(caste: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
+                {
+                  "label": "Sub-Caste",
+                  "value": profile.subCaste ?? "Not provided",
+                  "onEdit": () => _editField(
+                    "Sub-Caste",
+                    "Sub-Caste",
+                    profile.subCaste ?? "",
+                    (val) async {
+                      final updated = profile.copyWith(subCaste: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
+              ]),
+              const SizedBox(height: 24),
+              _buildDetailSection("Languages", [
+                {
+                  "label": "Mother Tongue",
+                  "value": profile.motherTongue,
+                  "onEdit": () => _editField(
+                    "Mother Tongue",
+                    "Language",
+                    profile.motherTongue,
+                    (val) async {
+                      final updated = profile.copyWith(motherTongue: val);
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
+                  ),
+                },
+                {
+                  "label": "Other Languages",
+                  "value": profile.languages.join(", "),
+                  "onEdit": () => _editField(
+                    "Other Languages",
+                    "Comma separated languages",
+                    profile.languages.join(", "),
+                    (val) async {
+                      final updated = profile.copyWith(
+                        languages: val
+                            .split(",")
+                            .map((e) => e.trim())
+                            .where((e) => e.isNotEmpty)
+                            .toList(),
+                      );
+                      await context.read<ProfileService>().updateProfile(
+                        updated,
+                      );
+                      authService.refresh();
+                    },
                   ),
                 },
               ]),
@@ -675,10 +701,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   child: CircularProgressIndicator(
                     value: completion,
                     strokeWidth: 4,
-                    color: const Color(0xFF820815),
-                    backgroundColor: const Color(
-                      0xFF820815,
-                    ).withValues(alpha: 0.1),
+                    color: AppStyles.primary,
+                    backgroundColor: AppStyles.primary.withValues(alpha: 0.1),
                   ),
                 ),
               Container(
@@ -688,7 +712,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   border: Border.all(
                     color: showProgress
                         ? Colors.transparent
-                        : const Color(0xFF820815),
+                        : AppStyles.primary,
                     width: 3,
                   ),
                 ),
@@ -746,7 +770,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF820815),
+                      color: AppStyles.primary,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -765,7 +789,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF820815),
+              color: AppStyles.primary,
             ),
           ),
           const SizedBox(height: 8),
@@ -776,7 +800,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               "Profile Strength: ${(completion * 100).toInt()}%",
               style: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFF820815),
+                color: AppStyles.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -876,7 +900,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ),
         Card(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppStyles.radiusL),
           ),
           elevation: 2,
           child: Padding(
@@ -944,7 +968,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ),
         Card(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppStyles.radiusL),
           ),
           elevation: 2,
           child: Padding(
@@ -1081,7 +1105,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ),
         Card(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppStyles.radiusL),
           ),
           elevation: 2,
           child: Padding(

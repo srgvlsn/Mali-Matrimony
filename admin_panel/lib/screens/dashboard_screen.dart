@@ -71,12 +71,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 "Dashboard Overview",
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: AppStyles.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               IconButton(
@@ -169,13 +169,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     IconData icon,
     Color color,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       constraints: const BoxConstraints(minWidth: 280, maxWidth: 350),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppStyles.cardShadow,
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
+        boxShadow: isDark ? [] : AppStyles.cardShadow,
       ),
       child: Row(
         children: [
@@ -203,8 +204,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 const SizedBox(height: 8),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: AppStyles.primary,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),

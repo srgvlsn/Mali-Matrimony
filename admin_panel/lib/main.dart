@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'package:shared/shared.dart';
+import 'services/admin_theme_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,14 +17,18 @@ class MaliAdminApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mali Matrimony Admin',
-      debugShowCheckedModeBanner: false,
-      theme: AppStyles.getThemeData().copyWith(
-        // Admin specific overrides
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: const AdminLoginScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AdminThemeService.instance.themeMode,
+      builder: (context, mode, child) {
+        return MaterialApp(
+          title: 'Mali Matrimony Admin',
+          debugShowCheckedModeBanner: false,
+          theme: AppStyles.getThemeData(),
+          darkTheme: AppStyles.getDarkThemeData(),
+          themeMode: mode,
+          home: const AdminLoginScreen(),
+        );
+      },
     );
   }
 }

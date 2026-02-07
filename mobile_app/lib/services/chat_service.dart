@@ -10,12 +10,51 @@ class ChatService extends ChangeNotifier {
   factory ChatService() => instance;
 
   List<Conversation> _conversations = [];
+  final List<Conversation> _archivedConversations = [];
   final Map<String, List<ChatMessage>> _messages = {};
   final Set<String> _typingUsers = {};
   bool _isLoading = false;
+  String? _activeChatUserId;
+  final Set<String> _selectedConversationIds = {};
 
   List<Conversation> get conversations => _conversations;
+  List<Conversation> get archivedConversations => _archivedConversations;
+  List<Conversation> get blockedConversations =>
+      _archivedConversations.where((c) => c.isBlocked).toList();
+  Map<String, List<ChatMessage>> get messages => _messages;
   bool get isLoading => _isLoading;
+  String? get activeChatUserId => _activeChatUserId;
+  Set<String> get selectedConversationIds => _selectedConversationIds;
+  bool get isSelectionMode => _selectedConversationIds.isNotEmpty;
+
+  set activeChatUserId(String? value) {
+    _activeChatUserId = value;
+    if (value != null) {
+      markAsRead(value);
+    }
+    notifyListeners();
+  }
+
+  void toggleSelection(String conversationId) {
+    if (_selectedConversationIds.contains(conversationId)) {
+      _selectedConversationIds.remove(conversationId);
+    } else {
+      _selectedConversationIds.add(conversationId);
+    }
+    notifyListeners();
+  }
+
+  void clearSelection() {
+    _selectedConversationIds.clear();
+    notifyListeners();
+  }
+
+  void archiveSelectedConversations() {
+    for (final otherUserId in _selectedConversationIds.toList()) {
+      archiveConversation(otherUserId);
+    }
+    clearSelection();
+  }
 
   int get totalUnreadCount {
     return _conversations.fold(0, (sum, item) => sum + item.unreadCount);
@@ -51,7 +90,23 @@ class ChatService extends ChangeNotifier {
     );
     if (response.success) {
       _messages[otherUserId] = response.data ?? [];
+      // Refresh conversations to update unread count in main list
+      await fetchConversations();
       notifyListeners();
+    }
+  }
+
+  Future<void> markAsRead(String otherUserId) async {
+    final user = AuthService.instance.currentUser;
+    if (user == null) return;
+
+    final response = await BackendService.instance.markChatAsRead(
+      user.id,
+      otherUserId,
+    );
+    if (response.success) {
+      // Refresh unread count
+      fetchConversations();
     }
   }
 
@@ -67,6 +122,7 @@ class ChatService extends ChangeNotifier {
       text: text,
       timestamp: DateTime.now(),
       isMe: true,
+      isRead: false, // New messages start as unread
     );
 
     if (!_messages.containsKey(otherUserId)) {
@@ -106,10 +162,32 @@ class ChatService extends ChangeNotifier {
     if (!_messages[otherId]!.any((m) => m.id == message.id)) {
       _messages[otherId]!.add(message);
 
+      // If this message is from the active chat, mark it as read immediately
+      if (_activeChatUserId == otherId) {
+        markAsRead(otherId);
+      }
+
       // Refresh conversations to update last message and unread count
       fetchConversations();
       notifyListeners();
     }
+  }
+
+  Future<void> unsendMessage(String messageId, String otherUserId) async {
+    // Remove message from local list
+    if (_messages.containsKey(otherUserId)) {
+      _messages[otherUserId]?.removeWhere((m) => m.id == messageId);
+      notifyListeners();
+    }
+
+    // Emit socket event to notify other user
+    NotificationService.instance.sendEvent('unsend_message', {
+      'message_id': messageId,
+      'receiver_id': otherUserId,
+    });
+
+    // Refresh conversations to update last message
+    await fetchConversations();
   }
 
   Conversation startConversation(
@@ -135,11 +213,112 @@ class ChatService extends ChangeNotifier {
       lastMessage: '',
       lastMessageTime: DateTime.now(),
       unreadCount: 0,
+      isLastMessageMe: false,
     );
 
     _conversations.insert(0, newConversation);
     notifyListeners();
     return newConversation;
+  }
+
+  void markConversationAsUnread(String otherUserId) {
+    final index = _conversations.indexWhere(
+      (c) => c.otherUserId == otherUserId,
+    );
+    if (index != -1) {
+      // Create a new conversation object with updated unread count
+      final conv = _conversations[index];
+      final updatedConv = Conversation(
+        id: conv.id,
+        otherUserId: conv.otherUserId,
+        otherUserName: conv.otherUserName,
+        otherUserPhoto: conv.otherUserPhoto,
+        lastMessage: conv.lastMessage,
+        lastMessageTime: conv.lastMessageTime,
+        unreadCount: conv.unreadCount > 0
+            ? conv.unreadCount
+            : 1, // Set to 1 if currently 0
+        isLastMessageMe: conv.isLastMessageMe,
+        isBlocked: conv.isBlocked,
+      );
+      _conversations[index] = updatedConv;
+      notifyListeners();
+    }
+  }
+
+  void removeConversation(String otherUserId) {
+    _conversations.removeWhere((c) => c.otherUserId == otherUserId);
+    // Also remove messages for this conversation
+    _messages.remove(otherUserId);
+    notifyListeners();
+  }
+
+  void blockConversation(String otherUserId) {
+    final index = _conversations.indexWhere(
+      (c) => c.otherUserId == otherUserId,
+    );
+    if (index != -1) {
+      final conv = _conversations.removeAt(index);
+      // Create a new conversation with isBlocked = true
+      final blockedConv = Conversation(
+        id: conv.id,
+        otherUserId: conv.otherUserId,
+        otherUserName: conv.otherUserName,
+        otherUserPhoto: conv.otherUserPhoto,
+        lastMessage: conv.lastMessage,
+        lastMessageTime: conv.lastMessageTime,
+        unreadCount: conv.unreadCount,
+        isLastMessageMe: conv.isLastMessageMe,
+        isBlocked: true,
+      );
+      _archivedConversations.insert(0, blockedConv);
+      notifyListeners();
+    }
+  }
+
+  void unblockConversation(String otherUserId) {
+    final index = _archivedConversations.indexWhere(
+      (c) => c.otherUserId == otherUserId && c.isBlocked,
+    );
+    if (index != -1) {
+      final conv = _archivedConversations.removeAt(index);
+      // Create a new conversation with isBlocked = false
+      final unblockedConv = Conversation(
+        id: conv.id,
+        otherUserId: conv.otherUserId,
+        otherUserName: conv.otherUserName,
+        otherUserPhoto: conv.otherUserPhoto,
+        lastMessage: conv.lastMessage,
+        lastMessageTime: conv.lastMessageTime,
+        unreadCount: conv.unreadCount,
+        isLastMessageMe: conv.isLastMessageMe,
+        isBlocked: false,
+      );
+      _conversations.insert(0, unblockedConv);
+      notifyListeners();
+    }
+  }
+
+  void archiveConversation(String otherUserId) {
+    final index = _conversations.indexWhere(
+      (c) => c.otherUserId == otherUserId,
+    );
+    if (index != -1) {
+      final conv = _conversations.removeAt(index);
+      _archivedConversations.insert(0, conv);
+      notifyListeners();
+    }
+  }
+
+  void unarchiveConversation(String otherUserId) {
+    final index = _archivedConversations.indexWhere(
+      (c) => c.otherUserId == otherUserId,
+    );
+    if (index != -1) {
+      final conv = _archivedConversations.removeAt(index);
+      _conversations.insert(0, conv);
+      notifyListeners();
+    }
   }
 
   void handleTypingEvent(Map<String, dynamic> data) {

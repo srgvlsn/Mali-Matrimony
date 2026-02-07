@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -47,7 +48,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("OTP sent successfully"),
-        backgroundColor: Color(0xFF820815),
+        backgroundColor: AppStyles.primary,
       ),
     );
   }
@@ -67,7 +68,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("Password reset successful"),
-        backgroundColor: Color(0xFF820815),
+        backgroundColor: AppStyles.primary,
       ),
     );
 
@@ -81,7 +82,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFD1C8),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF820815)),
+        iconTheme: const IconThemeData(color: AppStyles.primary),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -101,7 +102,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           style: TextStyle(
                             fontSize: 26,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF820815),
+                            color: AppStyles.primary,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -130,7 +131,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   icon: const Icon(
                                     Icons.edit,
                                     size: 20,
-                                    color: Color(0xFF820815),
+                                    color: AppStyles.primary,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -276,7 +277,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         suffixIcon: IconButton(
           icon: Icon(
             obscure ? Icons.visibility_off : Icons.visibility,
-            color: const Color(0xFF820815),
+            color: AppStyles.primary,
           ),
           onPressed: toggle,
         ),
@@ -288,17 +289,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF820815)),
+      labelStyle: const TextStyle(color: AppStyles.primary),
       disabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0x66820815)),
+        borderSide: BorderSide(color: AppStyles.primary.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(100),
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815)),
+        borderSide: const BorderSide(color: AppStyles.primary),
         borderRadius: BorderRadius.circular(100),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Color(0xFF820815), width: 2),
+        borderSide: const BorderSide(color: AppStyles.primary, width: 2),
         borderRadius: BorderRadius.circular(100),
       ),
       errorBorder: OutlineInputBorder(
@@ -314,7 +315,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   ButtonStyle _buttonStyle() {
     return ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF820815),
+      backgroundColor: AppStyles.primary,
       foregroundColor: const Color(0xFFFFD1C8),
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared/shared.dart';
 
 class StatChip extends StatelessWidget {
   final String label;
+  final IconData? icon;
 
-  const StatChip({super.key, required this.label});
+  const StatChip({super.key, required this.label, this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -12,14 +14,23 @@ class StatChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppStyles.radiusM),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null)
+            Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+          if (icon != null && label.isNotEmpty) const SizedBox(width: 4),
+          if (label.isNotEmpty)
+            Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -58,7 +69,7 @@ class ContentCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -90,7 +101,7 @@ class DetailListCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -106,10 +117,13 @@ class DetailListCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  item['icon'] as IconData,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Icon(
+                    item['icon'] as IconData,
+                    size: 24,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

@@ -50,7 +50,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   @override
   Widget build(BuildContext context) {
     if (_pendingUsers.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -58,7 +58,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
             SizedBox(height: 16),
             Text(
               "No pending verifications",
-              style: TextStyle(fontSize: 18, color: Colors.black54),
+              style: TextStyle(
+                fontSize: 18,
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+              ),
             ),
           ],
         ),
@@ -70,12 +75,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             "Verification Queue",
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.primary,
             ),
           ),
           const SizedBox(height: 24),
@@ -88,9 +93,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 return Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: AppStyles.cardShadow,
+                    color: Theme.of(context).cardTheme.color,
+                    borderRadius: BorderRadius.circular(AppStyles.radiusL),
+                    boxShadow: Theme.of(context).brightness == Brightness.dark
+                        ? []
+                        : AppStyles.cardShadow,
                   ),
                   child: LayoutBuilder(
                     builder: (context, cardConstraints) {
@@ -111,7 +118,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             "${user.age} yrs • ${user.occupation} • ${user.location}",
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[700],
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withValues(alpha: 0.7),
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -131,8 +142,41 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         children: [
                           OutlinedButton.icon(
                             onPressed: () async {
-                              AdminService.instance.rejectUser(user.id);
-                              await _loadData();
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text("Reject User?"),
+                                  content: Text(
+                                    "Are you sure you want to reject ${user.name}? This will delete their profile permanentlly.",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
+                                      child: const Text("CANCEL"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text(
+                                        "REJECT",
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true) {
+                                await AdminService.instance.rejectUser(user.id);
+                                await _loadData();
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("${user.name} Rejected"),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             },
                             icon: const Icon(Icons.close, color: Colors.red),
                             label: const Text(
@@ -197,9 +241,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                         )
                                       : null,
                                   child: user.photos.isEmpty
-                                      ? const Icon(
+                                      ? Icon(
                                           Icons.person,
-                                          color: Colors.grey,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.5),
                                         )
                                       : null,
                                 ),

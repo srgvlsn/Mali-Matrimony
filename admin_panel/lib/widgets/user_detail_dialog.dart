@@ -25,7 +25,9 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppStyles.radiusL),
+      ),
       child: Container(
         width: 600,
         padding: const EdgeInsets.all(32),
@@ -36,12 +38,12 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "User Detail Review",
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppStyles.primary,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   IconButton(
@@ -80,9 +82,10 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
                           ),
                         ),
                         Text(
-                          "${widget.user.age} yrs • ${widget.user.gender.name.toUpperCase()}",
-                          style: const TextStyle(
-                            color: Colors.grey,
+                          "${widget.user.age} yrs • ${widget.user.gender.name.toUpperCase()} • ${widget.user.location}",
+                          style: TextStyle(
+                            color: Theme.of(context).textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.6),
                             fontSize: 16,
                           ),
                         ),
@@ -102,10 +105,78 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
               const SizedBox(height: 32),
               _buildInfoSection("Bio", widget.user.bio),
               const SizedBox(height: 16),
+              _buildInfoSection(
+                "Partner Preference",
+                widget.user.partnerPreferences,
+              ),
+              Text(
+                "Personal Details",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
+                    child: _buildInfoSection(
+                      "Gender",
+                      widget.user.gender == Gender.male ? 'Male' : 'Female',
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Marital Status",
+                      widget.user.maritalStatus.displayValue,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoSection("Age", "${widget.user.age} yrs"),
+                  ),
+                  Expanded(
                     child: _buildInfoSection("Location", widget.user.location),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Phone",
+                      widget.user.phone ?? 'N/A',
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Email",
+                      widget.user.email ?? 'N/A',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                "Education & Career",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Education",
+                      widget.user.education,
+                    ),
                   ),
                   Expanded(
                     child: _buildInfoSection(
@@ -115,7 +186,62 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoSection("Company", widget.user.company),
+                  ),
+                  Expanded(
+                    child: _buildInfoSection("Income", widget.user.income),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                "Family Details",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Hometown",
+                      widget.user.hometown ?? "N/A",
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Siblings",
+                      widget.user.siblings.toString(),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoSection("Father", widget.user.fatherName),
+                  ),
+                  Expanded(
+                    child: _buildInfoSection("Mother", widget.user.motherName),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                "Community",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -125,11 +251,39 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
                     ),
                   ),
                   Expanded(
-                    child: _buildInfoSection("Income", widget.user.income),
+                    child: _buildInfoSection(
+                      "Sub-Caste",
+                      widget.user.subCaste ?? "N/A",
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+              Text(
+                "Languages",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Mother Tongue",
+                      widget.user.motherTongue,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildInfoSection(
+                      "Other Languages",
+                      widget.user.languages.join(", "),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
               _buildInfoSection(
                 "Registration Date",
                 DateFormatter.formatLongDate(widget.user.createdAt),
@@ -145,11 +299,11 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
               const SizedBox(height: 24),
               // Raw Data Section
               ExpansionTile(
-                title: const Text(
+                title: Text(
                   "Raw Data (JSON)",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppStyles.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 initiallyExpanded: _showRawData,
@@ -161,9 +315,12 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
                     child: SelectableText(
                       const JsonEncoder.withIndent(
@@ -234,9 +391,11 @@ class _UserDetailDialogState extends State<UserDetailDialog> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: Colors.grey,
+            color: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
             fontWeight: FontWeight.bold,
           ),
         ),
