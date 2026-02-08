@@ -18,18 +18,18 @@ class ApiService {
       if (kIsWeb) {
         // Running on web (including admin panel)
         _baseUrl = 'http://127.0.0.1:8000';
-        print('🌐 Running on Web - Using 127.0.0.1:8000');
+        // print('🌐 Running on Web - Using 127.0.0.1:8000');
       } else {
         // Running on mobile - check if Android or iOS
         String? envUrl = dotenv.env['API_URL'];
         // Fallback to LAN IP (192.168.1.8) which is more reliable than 10.0.2.2 on some setups
         _baseUrl = envUrl ?? 'http://192.168.1.8:8000';
-        print('📱 Running on Mobile - Using: $_baseUrl');
+        // print('📱 Running on Mobile - Using: $_baseUrl');
       }
 
-      print('✅ API Service initialized with base URL: $_baseUrl');
+      // print('✅ API Service initialized with base URL: $_baseUrl');
     } catch (e) {
-      print('❌ API Service initialization failed: $e');
+      // print('❌ API Service initialization failed: $e');
       rethrow;
     }
   }

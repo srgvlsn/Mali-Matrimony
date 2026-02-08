@@ -27,7 +27,10 @@ flutter run -d chrome
 
 ## 📝 Change Log
 
-### Version 0.6.9 - 2026-02-07 06:49
+### Version 0.7.0 - 2026-02-08 16:03
+**Contributor**: Sreerag Valsan
+> - **Cleanup & Stabilization**: Pruned debug logs and reorganized backend scripts.
+> - **Git Hygiene**: Removed tracked `__pycache__` and updated ignore rules.
 **Contributor**: Sreerag Valsan
 > - **UI Standardization**: Unified corner radius to 28.0/30.0 across all mobile and admin components.
 > - **Settings & Privacy**: Implemented dedicated settings screens and backend support.

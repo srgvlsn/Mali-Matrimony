@@ -28,8 +28,8 @@ class BackendService {
     String? password,
   }) async {
     try {
-      debugPrint('Attempting login for phone: $phone');
-      debugPrint('Backend URL: $_baseUrl/auth/login');
+      // debugPrint('Attempting login for phone: $phone');
+      // debugPrint('Backend URL: $_baseUrl/auth/login');
 
       final response = await http
           .post(
@@ -47,7 +47,7 @@ class BackendService {
             },
           );
 
-      debugPrint('Login response status: ${response.statusCode}');
+      // debugPrint('Login response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
@@ -58,7 +58,7 @@ class BackendService {
       } else {
         final Map<String, dynamic> errorData = json.decode(response.body);
         final errorMsg = errorData['detail'] ?? 'Login failed';
-        debugPrint('Login failed: $errorMsg');
+        // debugPrint('Login failed: $errorMsg');
         return ApiResponse.error(errorMsg);
       }
     } catch (e) {
@@ -79,8 +79,8 @@ class BackendService {
         body: json.encode({'username': username, 'password': password}),
       );
 
-      print('📥 Admin Login Response Code: ${response.statusCode}');
-      print('📥 Admin Login Response Body: ${response.body}');
+      // debugPrint('📥 Admin Login Response Code: ${response.statusCode}');
+      // debugPrint('📥 Admin Login Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);

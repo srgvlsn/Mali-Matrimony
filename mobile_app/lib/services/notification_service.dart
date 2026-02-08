@@ -91,7 +91,7 @@ class NotificationService extends ChangeNotifier {
       // Reset attempts on successful connection
       _channel!.ready
           .then((_) {
-            debugPrint('WebSocket connected successfully');
+            // debugPrint('WebSocket connected successfully');
             _reconnectAttempts = 0;
           })
           .catchError((e) {
@@ -138,7 +138,7 @@ class NotificationService extends ChangeNotifier {
           _channel = null;
         },
         onDone: () {
-          debugPrint('WebSocket closed');
+          // debugPrint('WebSocket closed');
           _channel = null;
           _reconnect(cleanUserId);
         },

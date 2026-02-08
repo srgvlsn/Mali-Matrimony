@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2026-02-08
+### Added
+- **Project Reorganization**: Moved redundant migration and seeding scripts to a dedicated `backend/scripts` directory for a cleaner root structure.
+
+### Changed
+- **Performance Optimization**: Pruned excessive `print` and `debugPrint` calls across shared and mobile services to reduce console noise and improve runtime performance.
+- **Repository Hygiene**: Removed tracked `__pycache__` directories from Git history to ensure proper versioning.
+- **Backend Refinement**: Removed temporary test OTP logging in production-ready endpoints.
+
+### Fixed
+- **Stability Polish**: Verified the entire codebase with `dart analyze`, ensuring zero linting issues across all Flutter modules.
+
 ## [0.6.9] - 2026-02-07
 ### Added
 - **Settings & Privacy**: Implemented dedicated Settings and Privacy screens in the mobile app with backend support for user preferences.

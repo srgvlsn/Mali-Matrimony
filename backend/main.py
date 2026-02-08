@@ -19,7 +19,7 @@ from pydantic import BaseModel
 # Create tables
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Mali Matrimony API", version="0.6.9")
+app = FastAPI(title="Mali Matrimony API", version="0.7.0")
 
 # Mount uploads directory to serve images
 os.makedirs("backend/uploads", exist_ok=True)
@@ -253,10 +253,10 @@ def request_otp(request: OTPRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="Phone number not registered")
         
-    # Generate mock OTP (always 123456 or random for logs)
+    # Generate mock OTP (always 123456)
     otp = "123456"
     otp_store[request.phone] = otp
-    print(f"OTP for {request.phone}: {otp}") # Log OTP for testing
+    # print(f"OTP for {request.phone}: {otp}") # Log OTP for testing removed for cleanup
     
     return schemas.ApiResponse(
         status="success",
